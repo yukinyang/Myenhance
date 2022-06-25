@@ -34,7 +34,7 @@ def getparser():
     parser.add_argument("--lr", type=float, default=0.0002)
     parser.add_argument("--data_path", type=str, default='imgs/')
     parser.add_argument("--img_size", type=int, default=[300, 400])
-    parser.add_argument("--decay_epoch", type=int, default=80)
+    parser.add_argument("--decay_epoch", type=int, default=800)
 
     print(parser.parse_args())
     return parser.parse_args()
@@ -57,7 +57,7 @@ if __name__ == '__main__':
         model.parameters(), lr=opt.lr, betas=(0.9, 0.999)
     )
     lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
-        optimizer, lr_lambda=LambdaLR(opt.epochs, 0, opt.decay_epoch).step
+        optimizer, lr_lambda=LambdaLR(opt.epochs, 0, opt.epochs - 1).step
     )
 
     transforms_ = [
@@ -75,8 +75,11 @@ if __name__ == '__main__':
         shuffle=False,
         num_workers=opt.n_cpus,
     )
+    print(len(dataloader))
 
-    for epoch in range(0, 1):
+    now = 0
+    nowloss = 0
+    for epoch in range(0, 300):
         for i, batch in enumerate(dataloader):
             # set model input
             input = Variable(batch['img'].type(Tensor))
@@ -94,18 +97,26 @@ if __name__ == '__main__':
             # print(R.shape)
 
             # Calculate loss
-            # rec = R * L + E
-            loss_l1 = Loss_l1(R, input)
+            L3 = torch.concat([L, L, L], 1)
+            # print(L3.shape)
+            rec = R * L3 + E
+            loss_l1 = Loss_l1(rec, input)
             loss_sm = smooth(L, R)
-            # print(loss_sm)
             loss_minp_E = sum_of_minpool(E)
             loss_d1_E = gradient_of_E_1(E)
             loss_d2_E = gradient_of_E_2(E)
 
-            Loss = loss_l1 + loss_sm + loss_minp_E + loss_d1_E + loss_d2_E
+            Loss = loss_l1 + 0.2 * loss_sm + 0.3 * loss_minp_E + 0.1 * loss_d1_E + 0.1 * loss_d2_E
+            nowloss = Loss
             Loss.backward()
             optimizer.step()
+            now += 1
+
+            if now % 50 == 0:
+                sample(R[0, :, :, :], L[0, :, :, :], E[0, :, :, :], now)
         lr_scheduler.step()
+        print("epoch: " + str(epoch) + "   Loss: " + str(nowloss))
+        print("======== epoch " + str(epoch) + " has been finished ========")
 
 
 

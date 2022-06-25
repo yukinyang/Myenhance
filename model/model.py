@@ -33,8 +33,8 @@ class Decom(nn.Module):
 
     def forward(self, input):
         x = input
-        # x = self.convs(x)
-        x = self.test_conv(x)
+        x = self.convs(x)
+        # x = self.test_conv(x)
         x = self.sigmoid(x)
         # R = x[:, 0:3, :, :]
         # L = x[:, 3:4, :, :]
