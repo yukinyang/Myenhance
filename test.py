@@ -60,10 +60,10 @@ from util.loss import *
 # print(kp)
 
 
-k = torch.randn([4, 1, 20, 30])
-conv = torch.nn.Conv2d(1, 1, (2, 1), stride=1, bias=False)
-print(conv.weight.shape)
-k = conv(k)
+k = torch.randn([4, 1, 75, 100])
+deconv = torch.nn.ConvTranspose2d(1, 1, 3, stride=2, padding=1, output_padding=1)
+k = deconv(k)
+print(k.shape)
 
 
 

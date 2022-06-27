@@ -38,13 +38,14 @@ def smooth(input_I, input_R):
     # input_R = torch.reshape(input_R, shape)
     # print(input_I.shape)
     # print(input_R.shape)
-    loss1 = gradient(input_I, 'x') * torch.exp(-10 * gradient(input_I, 'x'))
-    loss2 = gradient(input_I, 'y') * torch.exp(-10 * gradient(input_I, 'y'))
+    # loss1 = gradient(input_I, 'x') * torch.exp(-10 * gradient(input_I, 'x'))
+    # loss2 = gradient(input_I, 'y') * torch.exp(-10 * gradient(input_I, 'y'))
     loss3 = gradient(input_R_2, 'x') * torch.exp(-10 * gradient(input_R_2, 'x'))
     loss4 = gradient(input_R_2, 'y') * torch.exp(-10 * gradient(input_R_2, 'y'))
-    return torch.mean(loss1) + torch.mean(loss2) + torch.mean(loss3) + torch.mean(loss4)
+    # return torch.mean(loss1) + torch.mean(loss2) + torch.mean(loss3) + torch.mean(loss4)
     # loss = torch.mean(loss1)
-    # return loss
+    return torch.mean(loss3) + torch.mean(loss4)
+
 
 
 def sum_of_minpool(input):
@@ -77,4 +78,12 @@ def gradient_of_E_2(input):
     return loss1 + loss2 + loss3 + loss4
 
 
+class SCI_loss(nn.Module):
+    def __init__(self):
+        super(SCI_loss, self).__init__()
+        self.L1loss = nn.L1Loss()
+        self.L2loss = nn.MSELoss()
 
+    def forward(self, in_list, R_list, L_list, stage):
+        loss = 0
+        return loss

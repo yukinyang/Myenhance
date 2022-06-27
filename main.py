@@ -28,13 +28,13 @@ Loss
 
 def getparser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--epochs", type=int, default=100)
+    parser.add_argument("--epochs", type=int, default=200)
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--n_cpus", type=int, default=1)
-    parser.add_argument("--lr", type=float, default=0.0002)
+    parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--data_path", type=str, default='imgs/')
     parser.add_argument("--img_size", type=int, default=[300, 400])
-    parser.add_argument("--decay_epoch", type=int, default=800)
+    parser.add_argument("--decay_epoch", type=int, default=200)
 
     print(parser.parse_args())
     return parser.parse_args()
@@ -45,7 +45,8 @@ if __name__ == '__main__':
 
     Loss_l1 = nn.L1Loss()
 
-    model = Decom(layers=5)
+    # model = Decom(layers=5)
+    model = KD_decom()
 
     cuda = torch.cuda.is_available()
     Tensor = torch.cuda.FloatTensor if cuda else torch.Tensor
@@ -66,7 +67,7 @@ if __name__ == '__main__':
         # transforms.Resize(opt.img_size, transforms.InterpolationMode.BICUBIC),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ]
 
     dataloader = DataLoader(
@@ -79,7 +80,7 @@ if __name__ == '__main__':
 
     now = 0
     nowloss = 0
-    for epoch in range(0, 300):
+    for epoch in range(0, opt.epochs):
         for i, batch in enumerate(dataloader):
             # set model input
             input = Variable(batch['img'].type(Tensor))
@@ -89,33 +90,37 @@ if __name__ == '__main__':
             model.train()
             optimizer.zero_grad()
 
-            # R, L, E = model(input)
-            x = model(input)
-            R = x[:, 0:3, :, :]
-            L = x[:, 3:4, :, :]
-            E = x[:, 4:7, :, :] - 0.5
+            R, L, E = model(input)
+            # x = model(input)
+            # R = x[:, 0:3, :, :]
+            # L = x[:, 3:4, :, :]
+            # E = x[:, 4:7, :, :] - 0.5
             # print(R.shape)
+            # print(L.shape)
+            # print(E.shape)
 
             # Calculate loss
             L3 = torch.concat([L, L, L], 1)
             # print(L3.shape)
             rec = R * L3 + E
             loss_l1 = Loss_l1(rec, input)
+            loss_l1_RL = Loss_l1(R * L3, input)
             loss_sm = smooth(L, R)
             loss_minp_E = sum_of_minpool(E)
             loss_d1_E = gradient_of_E_1(E)
             loss_d2_E = gradient_of_E_2(E)
 
-            Loss = loss_l1 + 0.2 * loss_sm + 0.3 * loss_minp_E + 0.1 * loss_d1_E + 0.1 * loss_d2_E
+            Loss = loss_l1 + 0.8 * loss_l1_RL + 0.1 * loss_sm + 0.1 * loss_minp_E + 0.05 * loss_d1_E + 0.05 * loss_d2_E
+            # Loss = loss_l1
             nowloss = Loss
             Loss.backward()
             optimizer.step()
             now += 1
 
-            if now % 50 == 0:
-                sample(R[0, :, :, :], L[0, :, :, :], E[0, :, :, :], now)
+            if now % 40 == 0:
+                sample(R[0, :, :, :], L[0, :, :, :], E[0, :, :, :], now, input[0, :, :, :])
         lr_scheduler.step()
-        print("epoch: " + str(epoch) + "   Loss: " + str(nowloss))
+        print("epoch: " + str(epoch) + "   Loss: " + str(nowloss.cpu().detach().numpy()))
         print("======== epoch " + str(epoch) + " has been finished ========")
 
 
