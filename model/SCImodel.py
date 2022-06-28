@@ -6,9 +6,10 @@ import torch.nn as nn
 
 
 class enhance_net(nn.Module):
-    def __init__(self, layers, range=0.1):
+    def __init__(self, layers=3, range=0.1):
         super(enhance_net, self).__init__()
         self.layers = layers
+        self.range = range
         self.in_conv = nn.Sequential(
             nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, padding_mode='reflect'),
             nn.ReLU(inplace=True),
@@ -21,7 +22,7 @@ class enhance_net(nn.Module):
 
     def make_convs(self, num):
         layers = []
-        for i in range(layers):
+        for i in range(0, 3):
             convs = []
             convs.append(nn.Sequential(
                 nn.Conv2d(16, 16, kernel_size=3, stride=1, padding=1, padding_mode='reflect'),
@@ -38,13 +39,13 @@ class enhance_net(nn.Module):
         for conv in self.convs:
             x = x + conv(x)
         x = self.out_convs(x)
-        x = torch.clamp(x, 0, range)
+        x = torch.clamp(x, 0, self.range)
         return x
 
 
 
 class Network(nn.Module):
-    def __init__(self, enhance=True, layers=3, stage=3):
+    def __init__(self, enhance=True, layers=3, stage=3, weights=None):
         super(Network, self).__init__()
 
         self.stage = stage
@@ -59,10 +60,13 @@ class Network(nn.Module):
         R_list = []
         L_list = []
         U_list = []
+        # R, L, E = self.decom(x)
+        # return R,L,E
         for i in range(self.stage):
             in_list.append(x)
-            R, L = self.decom(x)
-            U = enhance_net(R)
+            R, L, E = self.decom(x)
+            U = self.enhance_net(R)
+            # print(U.shape)
             R_list.append(R)
             L_list.append(L)
             U_list.append(U)

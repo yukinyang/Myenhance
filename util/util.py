@@ -62,7 +62,8 @@ def sample(R, L, E, i, img):
     img_no_noise.save(out_no_noise_name)
 
 
-
+def sampleSCI():
+    return 0
 
 
 

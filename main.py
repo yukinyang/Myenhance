@@ -120,6 +120,9 @@ if __name__ == '__main__':
             if now % 40 == 0:
                 sample(R[0, :, :, :], L[0, :, :, :], E[0, :, :, :], now, input[0, :, :, :])
         lr_scheduler.step()
+        if (epoch >= 99 and (epoch + 1) % 50 == 0) or epoch == 1:
+            model_path = './save/' + str(epoch + 1) + 'decom_model.pth'
+            torch.save({'model':model.state_dict()}, model_path)
         print("epoch: " + str(epoch) + "   Loss: " + str(nowloss.cpu().detach().numpy()))
         print("======== epoch " + str(epoch) + " has been finished ========")
 

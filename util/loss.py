@@ -46,7 +46,12 @@ def smooth(input_I, input_R):
     # loss = torch.mean(loss1)
     return torch.mean(loss3) + torch.mean(loss4)
 
-
+def smooth_R(input_R):
+    input_R_1 = tensor_gray(input_R)
+    input_R_2 = input_R_1.unsqueeze(1)
+    loss1 = gradient(input_R_2, 'x') * torch.exp(-10 * gradient(input_R_2, 'x'))
+    loss2 = gradient(input_R_2, 'y') * torch.exp(-10 * gradient(input_R_2, 'y'))
+    return torch.mean(loss1) + torch.mean(loss2)
 
 def sum_of_minpool(input):
     input = torch.abs(input)
@@ -85,5 +90,8 @@ class SCI_loss(nn.Module):
         self.L2loss = nn.MSELoss()
 
     def forward(self, in_list, R_list, L_list, stage):
-        loss = 0
-        return loss
+        # stage = 3
+        loss_R = self.L2loss(R_list[0], R_list[1]) + self.L2loss(R_list[2], R_list[1])
+        loss_L = self.L2loss(in_list[0], L_list[0]) + self.L2loss(in_list[1], L_list[1]) + self.L2loss(in_list[2], L_list[2])
+        loss_smooth = smooth_R(R_list[0]) + smooth_R(R_list[1]) + smooth_R(R_list[2])
+        return loss_R + loss_L + loss_smooth
