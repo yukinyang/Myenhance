@@ -82,7 +82,19 @@ class Network(nn.Module):
         return loss
 
 
+class Testnet(nn.Module):
+    def __init__(self):
+        super(Testnet, self).__init__()
+        self.decom = KD_decom()
+        self.enhance_net = enhance_net()
 
+    def forward(self, input, r):
+        x = input
+        R, L, E = self.decom(x)
+        for i in range(r):
+            L = L + self.enhance_net(R)
+        L = torch.cat([L, L, L], 1)
+        return R * L
 
 
 

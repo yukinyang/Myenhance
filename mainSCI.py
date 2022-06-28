@@ -93,8 +93,10 @@ if __name__ == '__main__':
             #     sample(R[0, :, :, :], L[0, :, :, :], E[0, :, :, :], now, input[0, :, :, :])
         lr_scheduler.step()
         if (epoch >= 99 and (epoch + 1) % 50 == 0) or epoch == 1:
-            model_path = './save/' + str(epoch + 1) + 'SCI_model.pth'
-            torch.save({'model':model.state_dict()}, model_path)
+            model_KD_path = './save/' + str(epoch + 1) + '_SCI_model_KD.pth'
+            model_enhance_path = './save/' + str(epoch + 1) + '_SCI_model_EN.pth'
+            torch.save({'KD':model.decom.state_dict()}, model_KD_path)
+            torch.save({'Enhance':model.enhance_net.state_dict()}, model_enhance_path)
         print("epoch: " + str(epoch) + "   Loss: " + str(nowloss.cpu().detach().numpy()))
         print("======== epoch " + str(epoch) + " has been finished ========")
 
