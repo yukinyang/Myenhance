@@ -90,12 +90,11 @@ class SCI_loss(nn.Module):
         self.L2loss = nn.MSELoss()
 
     def forward(self, in_list, R_list, L_list, stage):
-        # stage = 3
-        loss_R = self.L2loss(R_list[0], R_list[1]) + self.L2loss(R_list[2], R_list[1])
+        # stage = 2
+        loss_R = self.L2loss(R_list[0], R_list[1])
         loss_L = self.L2loss(tensor_gray(in_list[0]), L_list[0])\
-                 + self.L2loss(tensor_gray(in_list[1]), L_list[1])\
-                 + self.L2loss(tensor_gray(in_list[2]), L_list[2])
-        loss_smooth = smooth_R(R_list[0]) + smooth_R(R_list[1]) + smooth_R(R_list[2])
+                 + self.L2loss(tensor_gray(in_list[1]), L_list[1])
+        loss_smooth = smooth_R(R_list[0]) + smooth_R(R_list[1])
         return 2 * loss_R + 2 * loss_L + loss_smooth
 
 

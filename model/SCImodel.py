@@ -45,7 +45,7 @@ class enhance_net(nn.Module):
 
 
 class Network(nn.Module):
-    def __init__(self, enhance=True, layers=3, stage=3, weights=None):
+    def __init__(self, enhance=True, layers=3, stage=2, weights=None):
         super(Network, self).__init__()
 
         self.stage = stage
