@@ -32,7 +32,7 @@ def RGB2BGR(input):
     return output
 
 
-def sample(R, L, E, i, img):
+def sample(R, L, i, img):
     unloader = transform.ToPILImage()
 
     input = img
@@ -45,14 +45,15 @@ def sample(R, L, E, i, img):
     img = unloader(input.transpose([1, 2, 0]))
     img.save(input_name)
 
-    out = R * L + E
-    out_name = "./run/" + str(i) + "_with_noise.jpg"
-    out = out.cpu().detach().numpy()
-    out = np.clip(out * 255.0, 0, 255).astype(np.uint8)
-    # img = Image.fromarray(np.uint8(out))
-    img = unloader(out.transpose([1, 2, 0]))
-    img.save(out_name)
+    # out = R * L + E
+    # out_name = "./run/" + str(i) + "_with_noise.jpg"
+    # out = out.cpu().detach().numpy()
+    # out = np.clip(out * 255.0, 0, 255).astype(np.uint8)
+    # # img = Image.fromarray(np.uint8(out))
+    # img = unloader(out.transpose([1, 2, 0]))
+    # img.save(out_name)
 
+    L = torch.cat([L, L, L])
     out_no_noise = R * L
     out_no_noise_name = "./run/" + str(i) + "_no_noise.jpg"
     out_no_noise = out_no_noise.cpu().detach().numpy()

@@ -64,7 +64,7 @@ class Network(nn.Module):
         # return R,L,E
         for i in range(self.stage):
             in_list.append(x)
-            R, L, E = self.decom(x)
+            R, L = self.decom(x)
             U = self.enhance_net(R)
             # print(U.shape)
             R_list.append(R)
@@ -90,13 +90,15 @@ class Testnet(nn.Module):
 
     def forward(self, input, r):
         x = input
-        R, L, E = self.decom(x)
+        R, L = self.decom(x)
         U = self.enhance_net(R)
         for i in range(r):
             L = L + self.enhance_net(R)
-            L = torch.clamp(L, 0.0000001, 1)
+            # L = torch.clamp(L, 0.0000001, 1)
         L = torch.cat([L, L, L], 1)
-        return R * L, R
+        newR = R * L
+        newR = torch.clamp(newR, 0, 1)
+        return newR, R
 
 
 

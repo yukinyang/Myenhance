@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 
 def getparser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--epochs", type=int, default=200)
+    parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--n_cpus", type=int, default=1)
     parser.add_argument("--lr", type=float, default=0.001)
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     )
     print(len(dataloader))
 
-    checkpoint = torch.load('./save/200decom_model.pth')
+    checkpoint = torch.load('./save/200_decom_model.pth')
     model.decom.load_state_dict(checkpoint['model'])
 
     now = 0
@@ -93,7 +93,7 @@ if __name__ == '__main__':
             # if now % 40 == 0:
             #     sample(R[0, :, :, :], L[0, :, :, :], E[0, :, :, :], now, input[0, :, :, :])
         lr_scheduler.step()
-        if (epoch >= 99 and (epoch + 1) % 50 == 0) or epoch == 1:
+        if (epoch >= 49 and (epoch + 1) % 50 == 0) or epoch == 1:
             model_KD_path = './save/' + str(epoch + 1) + '_SCI_model_KD.pth'
             model_enhance_path = './save/' + str(epoch + 1) + '_SCI_model_EN.pth'
             torch.save({'KD':model.decom.state_dict()}, model_KD_path)

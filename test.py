@@ -45,8 +45,8 @@ def SCITest():
     model = Testnet()
     model.cuda()
 
-    checkpoint_decom = torch.load('./save/200_SCI_model_KD.pth')
-    checkpoint_enhance = torch.load('./save/200_SCI_model_EN.pth')
+    checkpoint_decom = torch.load('./save/100_SCI_model_KD.pth')
+    checkpoint_enhance = torch.load('./save/100_SCI_model_EN.pth')
     model.decom.load_state_dict(checkpoint_decom['KD'])
     model.enhance_net.load_state_dict(checkpoint_enhance['Enhance'])
 

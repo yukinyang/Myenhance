@@ -84,7 +84,7 @@ class KD_decom(nn.Module):
         # self.l_conv2 = nn.Conv2d(32 + 32, 32, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
         self.l_conv2 = nn.Conv2d(32 + 32, 1, kernel_size=1, stride=1)
         # E channel
-        self.e_convs = self.make_convs(32, 3, 5)
+        # self.e_convs = self.make_convs(32, 3, 5)
 
     def make_convs(self, inch, outch, num):
         layers = []
@@ -142,10 +142,11 @@ class KD_decom(nn.Module):
         L = self.l_conv2(L)
         L = self.sigmoid(L)
 
-        E = self.e_convs(mid0)
-        E = self.sigmoid(E) - 0.5
+        # E = self.e_convs(mid0)
+        # E = self.sigmoid(E) - 0.5
 
-        return R, L, E
+        # return R, L, E
+        return R, L
 
 
 

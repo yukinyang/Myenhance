@@ -90,7 +90,7 @@ if __name__ == '__main__':
             model.train()
             optimizer.zero_grad()
 
-            R, L, E = model(input)
+            R, L = model(input)
             # x = model(input)
             # R = x[:, 0:3, :, :]
             # L = x[:, 3:4, :, :]
@@ -102,15 +102,16 @@ if __name__ == '__main__':
             # Calculate loss
             L3 = torch.concat([L, L, L], 1)
             # print(L3.shape)
-            rec = R * L3 + E
+            rec = R * L3
             loss_l1 = Loss_l1(rec, input)
             loss_l1_RL = Loss_l1(R * L3, input)
             loss_sm = smooth(L, R)
-            loss_minp_E = sum_of_minpool(E)
-            loss_d1_E = gradient_of_E_1(E)
-            loss_d2_E = gradient_of_E_2(E)
+            # loss_minp_E = sum_of_minpool(E)
+            # loss_d1_E = gradient_of_E_1(E)
+            # loss_d2_E = gradient_of_E_2(E)
 
-            Loss = loss_l1 + 0.8 * loss_l1_RL + 0.1 * loss_sm + 0.1 * loss_minp_E + 0.05 * loss_d1_E + 0.05 * loss_d2_E
+            # Loss = loss_l1 + 0.8 * loss_l1_RL + 0.1 * loss_sm + 0.1 * loss_minp_E + 0.05 * loss_d1_E + 0.05 * loss_d2_E
+            Loss = loss_l1 + 0.8 * loss_l1_RL + 0.1 * loss_sm
             # Loss = loss_l1
             nowloss = Loss
             Loss.backward()
@@ -118,10 +119,10 @@ if __name__ == '__main__':
             now += 1
 
             if now % 40 == 0:
-                sample(R[0, :, :, :], L[0, :, :, :], E[0, :, :, :], now, input[0, :, :, :])
+                sample(R[0, :, :, :], L[0, :, :, :], now, input[0, :, :, :])
         lr_scheduler.step()
         if (epoch >= 99 and (epoch + 1) % 50 == 0) or epoch == 1:
-            model_path = './save/' + str(epoch + 1) + 'decom_model.pth'
+            model_path = './save/' + str(epoch + 1) + '_decom_model.pth'
             torch.save({'model':model.state_dict()}, model_path)
         print("epoch: " + str(epoch) + "   Loss: " + str(nowloss.cpu().detach().numpy()))
         print("======== epoch " + str(epoch) + " has been finished ========")

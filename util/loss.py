@@ -96,7 +96,7 @@ class SCI_loss(nn.Module):
         in1 = tensor_gray(in_list[1])
         in0 = in0.unsqueeze(1)
         in1 = in1.unsqueeze(1)
-        loss_L = self.L2loss(tensor_gray(in0), L_list[0]) + self.L2loss(in1, L_list[1])
+        loss_L = self.L2loss(in0, L_list[0]) + self.L2loss(in1, L_list[1])
         loss_smooth = smooth_R(R_list[0]) + smooth_R(R_list[1])
         loss_in = self.L2loss(in_list[0], in_list[1])
         return 2 * loss_R + 2 * loss_L + 0.1 * loss_smooth + loss_in
