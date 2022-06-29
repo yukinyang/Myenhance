@@ -3,6 +3,7 @@ from util.util import *
 from util.loss import *
 from dataset.dataset import *
 from model.SCImodel import *
+from test import *
 
 import argparse
 import os
@@ -99,6 +100,8 @@ if __name__ == '__main__':
             torch.save({'Enhance':model.enhance_net.state_dict()}, model_enhance_path)
         print("epoch: " + str(epoch) + "   Loss: " + str(nowloss.cpu().detach().numpy()))
         print("======== epoch " + str(epoch) + " has been finished ========")
+
+    SCITest()
 
 
 

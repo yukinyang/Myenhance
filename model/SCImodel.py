@@ -91,10 +91,12 @@ class Testnet(nn.Module):
     def forward(self, input, r):
         x = input
         R, L, E = self.decom(x)
+        U = self.enhance_net(R)
         for i in range(r):
             L = L + self.enhance_net(R)
+            L = torch.clamp(L, 0.0000001, 1)
         L = torch.cat([L, L, L], 1)
-        return R * L
+        return R * L, R
 
 
 

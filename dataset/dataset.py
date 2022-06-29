@@ -66,12 +66,14 @@ class TestLoader(Dataset):
     def __getitem__(self, index):
 
         low = self.load_images_transform(self.train_low_data_names[index])
+        low.resize([300, 400])
 
         h = low.shape[0]
         w = low.shape[1]
+        print(h, w)
         #
-        h_offset = random.randint(0, max(0, h - batch_h - 1))
-        w_offset = random.randint(0, max(0, w - batch_w - 1))
+        # h_offset = random.randint(0, max(0, h - batch_h - 1))
+        # w_offset = random.randint(0, max(0, w - batch_w - 1))
         #
         # if self.task != 'test':
         #     low = low[h_offset:h_offset + batch_h, w_offset:w_offset + batch_w]

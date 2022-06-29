@@ -5,7 +5,6 @@ import cv2
 import numpy as np
 import torch
 import argparse
-import tensorflow as tf
 from torch.autograd import Variable
 from matplotlib import pyplot as plt
 from util.loss import *
@@ -15,6 +14,7 @@ def getparser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_path', type=str, default='./testimg', help='location of the data corpus')
     parser.add_argument('--save_path', type=str, default='./run', help='location of the data corpus')
+    parser.add_argument("--img_size", type=int, default=[300, 400])
 
     print(parser.parse_args())
     return parser.parse_args()
@@ -27,10 +27,15 @@ def save_images(tensor, path):
     im.save(path, 'png')
 
 
-if __name__ == '__main__':
+def SCITest():
+    torch.cuda.empty_cache()
     opt = getparser()
-    TestDataset = TestLoader(img_dir=opt.data_path, task='test')
 
+    transforms_ = [
+        transforms.Resize(opt.img_size, Image.BICUBIC),
+        transforms.ToTensor(),
+    ]
+    TestDataset = ImageDataset(root=opt.data_path, transform_=transforms_)
     test_imgs = torch.utils.data.DataLoader(
         TestDataset,
         batch_size=1,
@@ -46,19 +51,26 @@ if __name__ == '__main__':
     model.enhance_net.load_state_dict(checkpoint_enhance['Enhance'])
 
     model.eval()
-    with torch.no_grad():
-        for _, (input, image_name) in enumerate(test_imgs):
-            input = Variable(input, volatile=True).cuda()
-            image_name = image_name[0].split('\\')[-1].split('.')[0]
-            out = model(input, 1)
-            u_name = '%s.png' % (image_name)
-            print('processing {}'.format(u_name))
-            u_path = opt.save_path + '/' + u_name
-            u_path_i = opt.save_path + '/' + 'i_' + u_name
-            save_images(out, u_path)
+    for rr in range(0, 6):
+        now = 0
+        with torch.no_grad():
+            for i, input in enumerate(test_imgs):
+                input = Variable(input['img'], volatile=True).cuda()
+                image_name = str(now)
+                out, R = model(input, rr)
+                u_name = '%s.png' % (image_name + '_' + str(rr))
+                u_name_R = '%s_R.png' % (image_name)
+        #         print('processing {}'.format(u_name))
+                u_path = opt.save_path + '/' + u_name
+                u_path_R = opt.save_path + '/' + u_name_R
+        #         u_path_i = opt.save_path + '/' + 'i_' + u_name
+                save_images(out, u_path)
+                save_images(R, u_path_R)
+                now = now + 1
 
 
-
+if __name__ == '__main__':
+    SCITest()
 
 
 
