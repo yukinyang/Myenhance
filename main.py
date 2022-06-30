@@ -2,6 +2,7 @@ from model.model import *
 from util.util import *
 from util.loss import *
 from dataset.dataset import *
+from test import *
 
 import argparse
 import os
@@ -26,14 +27,15 @@ Loss
     Loss_sm = loss.smooth()
 '''
 
+
 def getparser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--epochs", type=int, default=200)
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--n_cpus", type=int, default=1)
     parser.add_argument("--lr", type=float, default=0.001)
-    parser.add_argument("--data_path", type=str, default='imgs/')
-    parser.add_argument("--img_size", type=int, default=[300, 400])
+    parser.add_argument("--data_path", type=str, default='G:/datasets/LOLdataset/imgs/')
+    parser.add_argument("--img_size", type=int, default=[400, 600])
     parser.add_argument("--decay_epoch", type=int, default=200)
 
     print(parser.parse_args())
@@ -80,6 +82,18 @@ if __name__ == '__main__':
 
     now = 0
     nowloss = 0
+
+    run_dirs = os.listdir('./run')
+    i = 0
+    run_name = 'runs'
+    for i in range(1, 10000):
+        newdir = run_name + str(i)
+        if newdir not in run_dirs:
+            run_name = newdir
+            break
+    print(run_name)
+    os.makedirs('./run/' + run_name)
+
     for epoch in range(0, opt.epochs):
         for i, batch in enumerate(dataloader):
             # set model input
@@ -91,13 +105,6 @@ if __name__ == '__main__':
             optimizer.zero_grad()
 
             R, L = model(input)
-            # x = model(input)
-            # R = x[:, 0:3, :, :]
-            # L = x[:, 3:4, :, :]
-            # E = x[:, 4:7, :, :] - 0.5
-            # print(R.shape)
-            # print(L.shape)
-            # print(E.shape)
 
             # Calculate loss
             L3 = torch.concat([L, L, L], 1)
@@ -118,14 +125,23 @@ if __name__ == '__main__':
             optimizer.step()
             now += 1
 
-            if now % 40 == 0:
-                sample(R[0, :, :, :], L[0, :, :, :], now, input[0, :, :, :])
+            if now % 100 == 0:
+                sample(R[0, :, :, :], L[0, :, :, :], now, input[0, :, :, :], run_name)
         lr_scheduler.step()
         if (epoch >= 99 and (epoch + 1) % 50 == 0) or epoch == 1:
-            model_path = './save/' + str(epoch + 1) + '_decom_model.pth'
-            torch.save({'model':model.state_dict()}, model_path)
+            model_path = './save/' + str(epoch + 1) + '_decom_LOLset.pth'
+            torch.save({'KD':model.state_dict()}, model_path)
         print("epoch: " + str(epoch) + "   Loss: " + str(nowloss.cpu().detach().numpy()))
         print("======== epoch " + str(epoch) + " has been finished ========")
+
+    # Test
+    load_dir = './save/' + str(opt.epochs) + '_decom_LOLset.pth'
+    Testdir = './testimg/'
+    Savedir = get_dir_name('./run', 'Decom_test')
+    os.makedirs(Savedir)
+    Testmodel = KD_decom()
+    Testmodel.cuda()
+    DecomTest(Testmodel, Testdir, Savedir, load_dir)
 
 
 

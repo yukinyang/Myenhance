@@ -27,6 +27,42 @@ def save_images(tensor, path):
     im.save(path, 'png')
 
 
+def DecomTest(model, test_dir, save_dir, load_dir):
+    torch.cuda.empty_cache()
+    opt = getparser()
+    transforms_ = [
+        transforms.Resize(opt.img_size, Image.BICUBIC),
+        transforms.ToTensor(),
+    ]
+    TestDataset = ImageDataset(root=test_dir, transform_=transforms_)
+    test_imgs = torch.utils.data.DataLoader(
+        TestDataset,
+        batch_size=1,
+        pin_memory=True,
+        num_workers=0)
+
+    checkpoint = torch.load(load_dir)
+    model.load_state_dict(checkpoint['KD'])
+
+    model.eval()
+    now = 1
+    with torch.no_grad():
+        for i, input in enumerate(test_imgs):
+            input = Variable(input['img'], volatile=True).cuda()
+            R, L = model(input)
+            if len(L.shape) == 4:
+                R.squeeze(0)
+                L.squeeze(0)
+            L = torch.cat([L, L, L], 1)
+            u_name = '%s.png' % (str(now) + '_gen')
+            u_name_R = '%s_R.png' % (str(now) + '_R')
+            u_path = save_dir + '/' + u_name
+            u_path_R = save_dir + '/' + u_name_R
+            save_images(R * L, u_path)
+            save_images(R, u_path_R)
+            now = now + 1
+
+
 def SCITest():
     torch.cuda.empty_cache()
     opt = getparser()

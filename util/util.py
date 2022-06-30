@@ -3,6 +3,7 @@ import numpy as np
 import PIL.Image as Image
 import torchvision.transforms as transform
 import cv2
+import os
 
 
 def tensor_gray(input):
@@ -13,6 +14,15 @@ def tensor_gray(input):
         newinput[i, 0, :, :] = newinput[i, 0, :, :] + input[i, 1, :, :] / 3
         newinput[i, 0, :, :] = newinput[i, 0, :, :] + input[i, 2, :, :] / 3
     return newinput[:, 0, :, :]
+
+
+def tensor_gray_3(input):
+    newinput = input.clone()
+    newinput[0, :, :] = input[0, :, :] / 3
+    newinput[0, :, :] = newinput[0, :, :] + input[1, :, :] / 3
+    newinput[0, :, :] = newinput[0, :, :] + input[2, :, :] / 3
+    return newinput[0, :, :]
+
 
 class LambdaLR:
     def __init__(self, n_epochs, offset, decay_start_epoch):
@@ -32,11 +42,11 @@ def RGB2BGR(input):
     return output
 
 
-def sample(R, L, i, img):
+def sample(R, L, i, img, name):
     unloader = transform.ToPILImage()
 
     input = img
-    input_name = "./run/" + str(i) + "_pre.jpg"
+    input_name = "./run/" + name + '/' + str(i) + "_pre.jpg"
     input = input.cpu().detach().numpy()
     input = np.clip(input * 255.0, 0, 255).astype(np.uint8)
     # input = RGB2BGR(input)
@@ -55,12 +65,28 @@ def sample(R, L, i, img):
 
     L = torch.cat([L, L, L])
     out_no_noise = R * L
-    out_no_noise_name = "./run/" + str(i) + "_no_noise.jpg"
+    out_no_noise_name = "./run/" + name + '/' + str(i) + "_gen.jpg"
     out_no_noise = out_no_noise.cpu().detach().numpy()
     out_no_noise = np.clip(out_no_noise * 255.0, 0, 255).astype(np.uint8)
     # img_no_noise = Image.fromarray(np.uint8(out_no_noise))
     img_no_noise = unloader(out_no_noise.transpose([1, 2, 0]))
     img_no_noise.save(out_no_noise_name)
+
+    out_R_name = "./run/" + name + '/' + str(i) + "_R.jpg"
+    out_R = R.cpu().detach().numpy()
+    out_R = np.clip(out_R * 255.0, 0, 255).astype(np.uint8)
+    img_R = unloader(out_R.transpose([1, 2, 0]))
+    img_R.save(out_R_name)
+
+
+def get_dir_name(path, name):
+    dirs = os.listdir(path)
+    for i in range(1, 1000):
+        newname = name + str(i)
+        if newname not in dirs:
+            name = newname
+            break
+    return path + '/' + name
 
 
 def sampleSCI():

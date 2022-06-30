@@ -83,6 +83,10 @@ def gradient_of_E_2(input):
     return loss1 + loss2 + loss3 + loss4
 
 
+def mean_illumination(input):
+    return torch.mean(input)
+
+
 class SCI_loss(nn.Module):
     def __init__(self):
         super(SCI_loss, self).__init__()
@@ -100,6 +104,26 @@ class SCI_loss(nn.Module):
         loss_smooth = smooth_R(R_list[0]) + smooth_R(R_list[1])
         loss_in = self.L2loss(in_list[0], in_list[1])
         return 2 * loss_R + 2 * loss_L + 0.1 * loss_smooth + loss_in
+
+
+class judge_loss(nn.Module):
+    def __init__(self):
+        super(judge_loss, self).__init__()
+        self.L1loss = nn.L1Loss()
+        self.L2loss = nn.MSELoss()
+
+    def exposure_loss(self, new_L, L, R, thr=0.8):
+        img = L * R
+        target = torch.where(img > thr, R, L)
+        return self.L2loss(new_L, target)
+
+    def forward(self, new_L, L, R):
+        loss_illumination = torch.abs(mean_illumination(new_L) - mean_illumination(L))
+        R_1 = tensor_gray_3(R).unsqueeze(0)
+        loss_L = self.L2loss(new_L, R_1)
+        loss_exposure = self.exposure_loss(new_L, L, R)
+        return loss_L + loss_illumination + loss_exposure
+
 
 
 

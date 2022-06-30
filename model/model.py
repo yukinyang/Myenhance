@@ -101,7 +101,6 @@ class KD_decom(nn.Module):
         ))
         return nn.Sequential(*layers)
 
-
     def forward(self, input):
         x = input
 
@@ -146,6 +145,76 @@ class KD_decom(nn.Module):
         # E = self.sigmoid(E) - 0.5
 
         # return R, L, E
+        return R, L
+
+
+class KD_decom_s(nn.Module):
+    def __init__(self):
+        super(KD_decom_s, self).__init__()
+        self.inch = 3
+        self.outch1 = 3
+        self.outch2 = 1
+        self.outch3 = 3
+
+        self.relu = nn.ReLU(inplace=True)
+        self.sigmoid = nn.Sigmoid()
+
+        self.conv1 = nn.Conv2d(self.inch, 16, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
+        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
+        # R channel
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
+        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
+        self.up1 = nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.conv4 = nn.Conv2d(32 + 32, 32, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
+        self.up2 = nn.ConvTranspose2d(32, 16, kernel_size=3, stride=2, padding=1, output_padding=1)
+        self.conv5 = nn.Conv2d(16 + 16, 16, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
+        self.conv6 = nn.Conv2d(16, 3, kernel_size=1, stride=1)
+        # L channel
+        self.l_conv1 = nn.Conv2d(16, 16, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
+        # self.l_conv2 = nn.Conv2d(32 + 32, 32, kernel_size=3, stride=1, padding=1, padding_mode='reflect')
+        self.l_conv2 = nn.Conv2d(16 + 16, 1, kernel_size=1, stride=1)
+
+    def forward(self, input):
+        x = input
+
+        mid0 = self.conv1(x)
+        mid0 = self.relu(mid0)
+        # print("mid0:   ", mid0.shape)
+
+        mid1 = self.pool1(mid0)
+        mid1 = self.conv2(mid1)
+        mid1 = self.relu(mid1)
+        # print("mid1:   ", mid1.shape)
+
+        mid2 = self.pool2(mid1)
+        mid2 = self.conv3(mid2)
+        # print("mid2:   ", mid2.shape)
+
+        mid3 = self.up1(mid2)
+        mid3 = torch.cat([mid1, mid3], 1)
+        mid3 = self.conv4(mid3)
+        mid3 = self.relu(mid3)
+        # print("mid3:   ", mid3.shape)
+
+        mid4 = self.up2(mid3)
+        mid4 = torch.cat([mid0, mid4], 1)
+        mid4 = self.conv5(mid4)
+        mid4 = self.relu(mid4)
+        # print("mid4:   ", mid4.shape)
+
+        R = self.conv6(mid4)
+        R = self.sigmoid(R)
+        # print("R:   ", R.shape)
+
+        mid_l1 = self.l_conv1(mid0)
+        mid_l1 = self.relu(mid_l1)
+        # print("midl1:   ", mid_l1.shape)
+
+        L = torch.cat([mid4, mid_l1], 1)
+        L = self.l_conv2(L)
+        L = self.sigmoid(L)
+
         return R, L
 
 
