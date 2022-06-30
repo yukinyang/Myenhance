@@ -1,6 +1,8 @@
 from dataset.dataset import *
 from model.SCImodel import *
 from model.judgemodel import *
+from util.loss import *
+import pytorch_ssim
 
 import cv2
 import os
@@ -76,8 +78,14 @@ if __name__ == '__main__':
     # print(name)
 
 
-    x = torch.randn([1, 2, 3, 4])
-    print(len(x.shape))
+    x = torch.randn([8, 1, 20, 40])
+    y = torch.randn([8, 3, 20, 40])
+
+    loss_SSIM = pytorch_ssim.SSIM()
+    loss = loss_SSIM(x, y)
+    loss1 = loss_SSIM(x, x)
+    print(loss)
+    print(loss1)
 
 
 

@@ -69,8 +69,8 @@ class Overexposure_net(nn.Module):
         new_L = self.out_convs(x)
         return new_L, L, R
 
-    def cal_loss(self, new_L, L, R):
-        return judge_loss(new_L, L, R)
+    # def cal_loss(self, new_L, L, R):
+    #     return judge_loss(new_L, L, R)
 
 
 

@@ -63,7 +63,7 @@ def DecomTest(model, test_dir, save_dir, load_dir):
             now = now + 1
 
 
-def SCITest():
+def SCITest(Savedir):
     torch.cuda.empty_cache()
     opt = getparser()
 
@@ -87,7 +87,9 @@ def SCITest():
     model.enhance_net.load_state_dict(checkpoint_enhance['Enhance'])
 
     model.eval()
-    for rr in range(0, 6):
+    for rr in range(0, 51):
+        if rr % 5 != 0:
+            continue
         now = 0
         with torch.no_grad():
             for i, input in enumerate(test_imgs):
@@ -97,16 +99,16 @@ def SCITest():
                 u_name = '%s.png' % (image_name + '_' + str(rr))
                 u_name_R = '%s_R.png' % (image_name)
         #         print('processing {}'.format(u_name))
-                u_path = opt.save_path + '/' + u_name
-                u_path_R = opt.save_path + '/' + u_name_R
+                u_path = Savedir + '/' + u_name
+                u_path_R = Savedir + '/' + u_name_R
         #         u_path_i = opt.save_path + '/' + 'i_' + u_name
                 save_images(out, u_path)
                 save_images(R, u_path_R)
                 now = now + 1
 
 
-if __name__ == '__main__':
-    SCITest()
+# if __name__ == '__main__':
+#     SCITest()
 
 
 

@@ -22,7 +22,7 @@ def getparser():
     parser.add_argument("--n_cpus", type=int, default=1)
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--data_path", type=str, default='imgs/')
-    parser.add_argument("--img_size", type=int, default=[300, 400])
+    parser.add_argument("--img_size", type=int, default=[400, 600])
     parser.add_argument("--decay_epoch", type=int, default=200)
 
     print(parser.parse_args())
@@ -101,7 +101,9 @@ if __name__ == '__main__':
         print("epoch: " + str(epoch) + "   Loss: " + str(nowloss.cpu().detach().numpy()))
         print("======== epoch " + str(epoch) + " has been finished ========")
 
-    SCITest()
+    run_dir = get_dir_name('./run', 'SCItest')
+    os.makedirs(run_dir)
+    SCITest(run_dir)
 
 
 

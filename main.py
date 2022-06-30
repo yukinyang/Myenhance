@@ -48,7 +48,7 @@ if __name__ == '__main__':
     Loss_l1 = nn.L1Loss()
 
     # model = Decom(layers=5)
-    model = KD_decom()
+    model = KD_decom_s()
 
     cuda = torch.cuda.is_available()
     Tensor = torch.cuda.FloatTensor if cuda else torch.Tensor
@@ -83,16 +83,8 @@ if __name__ == '__main__':
     now = 0
     nowloss = 0
 
-    run_dirs = os.listdir('./run')
-    i = 0
-    run_name = 'runs'
-    for i in range(1, 10000):
-        newdir = run_name + str(i)
-        if newdir not in run_dirs:
-            run_name = newdir
-            break
-    print(run_name)
-    os.makedirs('./run/' + run_name)
+    run_dir = get_dir_name('./run', 'Decom')
+    os.makedirs(run_dir)
 
     for epoch in range(0, opt.epochs):
         for i, batch in enumerate(dataloader):
@@ -126,10 +118,10 @@ if __name__ == '__main__':
             now += 1
 
             if now % 100 == 0:
-                sample(R[0, :, :, :], L[0, :, :, :], now, input[0, :, :, :], run_name)
+                sample(R[0, :, :, :], L[0, :, :, :], now, input[0, :, :, :], run_dir)
         lr_scheduler.step()
         if (epoch >= 99 and (epoch + 1) % 50 == 0) or epoch == 1:
-            model_path = './save/' + str(epoch + 1) + '_decom_LOLset.pth'
+            model_path = './save/' + str(epoch + 1) + '_decom_s_LOLset.pth'
             torch.save({'KD':model.state_dict()}, model_path)
         print("epoch: " + str(epoch) + "   Loss: " + str(nowloss.cpu().detach().numpy()))
         print("======== epoch " + str(epoch) + " has been finished ========")

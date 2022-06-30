@@ -1,4 +1,5 @@
 from model.model import *
+from model.judgemodel import *
 from util.loss import *
 
 import torch
@@ -53,6 +54,7 @@ class Network(nn.Module):
         self.Loss = SCI_loss()
         self.decom = KD_decom()
         self.enhance_net = enhance_net(layers)
+        self.exposure = Overexposure_net()
 
     def forward(self, input):
         x = input
@@ -60,6 +62,7 @@ class Network(nn.Module):
         R_list = []
         L_list = []
         U_list = []
+        nL_list = []
         # R, L, E = self.decom(x)
         # return R,L,E
         for i in range(self.stage):
@@ -70,15 +73,21 @@ class Network(nn.Module):
             R_list.append(R)
             L_list.append(L)
             U_list.append(U)
-            U = torch.cat([U, U, U], 1)
+
+            nL = self.exposure(L + U, R)
+            nL = torch.cat([nL, nL, nL], 1)
+            nL_list.append(nL)
+
+            # U = torch.cat([U, U, U], 1)
             if self.enhance:
-                x = x + R * U
+                # x = x + R * U
+                x = R * nL
             else:
                 x = x - R * U
-        return in_list, R_list, L_list, U_list
+        return in_list, R_list, L_list, U_list, nL_list
 
-    def cal_loss(self, in_list, R_list, L_list):
-        loss = self.Loss(in_list, R_list, L_list, self.stage)
+    def cal_loss(self, in_list, R_list, L_list, nL_list):
+        loss = self.Loss(in_list, R_list, L_list, nL_list)
         return loss
 
 
