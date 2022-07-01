@@ -83,8 +83,10 @@ def SCITest(Savedir):
 
     checkpoint_decom = torch.load('./save/100_SCI_model_KD.pth')
     checkpoint_enhance = torch.load('./save/100_SCI_model_EN.pth')
+    checkpoint_ex = torch.load('./save/100_SCI_model_EX.pth')
     model.decom.load_state_dict(checkpoint_decom['KD'])
     model.enhance_net.load_state_dict(checkpoint_enhance['Enhance'])
+    model.exposure.load_state_dict(checkpoint_ex['Ex'])
 
     model.eval()
     for rr in range(0, 51):
@@ -107,8 +109,10 @@ def SCITest(Savedir):
                 now = now + 1
 
 
-# if __name__ == '__main__':
-#     SCITest()
+if __name__ == '__main__':
+    run_dir = get_dir_name('./run', 'SCItest')
+    os.makedirs(run_dir)
+    SCITest(run_dir)
 
 
 

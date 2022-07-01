@@ -34,7 +34,7 @@ def getparser():
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--n_cpus", type=int, default=1)
     parser.add_argument("--lr", type=float, default=0.001)
-    parser.add_argument("--data_path", type=str, default='G:/datasets/LOLdataset/imgs/')
+    parser.add_argument("--data_path", type=str, default='../LOLdataset/imgs/')
     parser.add_argument("--img_size", type=int, default=[400, 600])
     parser.add_argument("--decay_epoch", type=int, default=200)
 
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     now = 0
     nowloss = 0
 
-    run_dir = get_dir_name('./run', 'Decom')
+    run_dir = get_dir_name('./run', 'Decom_train')
     os.makedirs(run_dir)
 
     for epoch in range(0, opt.epochs):
@@ -117,7 +117,7 @@ if __name__ == '__main__':
             optimizer.step()
             now += 1
 
-            if now % 100 == 0:
+            if now % 99 == 0:
                 sample(R[0, :, :, :], L[0, :, :, :], now, input[0, :, :, :], run_dir)
         lr_scheduler.step()
         if (epoch >= 99 and (epoch + 1) % 50 == 0) or epoch == 1:

@@ -85,41 +85,10 @@ def gradient_of_E_2(input):
 
 
 def mean_illumination(x, y):
-    z = torch.abs(x - y)
+    a = x
+    b = y
+    z = torch.abs(a - b)
     return torch.mean(z)
-
-
-class SSIM(nn.Module):
-    """Layer to compute the SSIM loss between a pair of images
-    """
-    def __init__(self):
-        super(SSIM, self).__init__()
-        self.mu_x_pool   = nn.AvgPool2d(3, 1)
-        self.mu_y_pool   = nn.AvgPool2d(3, 1)
-        self.sig_x_pool  = nn.AvgPool2d(3, 1)
-        self.sig_y_pool  = nn.AvgPool2d(3, 1)
-        self.sig_xy_pool = nn.AvgPool2d(3, 1)
-
-        self.refl = nn.ReflectionPad2d(1)
-
-        self.C1 = 0.01 ** 2
-        self.C2 = 0.03 ** 2
-
-    def forward(self, x, y):
-        x = self.refl(x)
-        y = self.refl(y)
-
-        mu_x = self.mu_x_pool(x)
-        mu_y = self.mu_y_pool(y)
-
-        sigma_x  = self.sig_x_pool(x ** 2) - mu_x ** 2
-        sigma_y  = self.sig_y_pool(y ** 2) - mu_y ** 2
-        sigma_xy = self.sig_xy_pool(x * y) - mu_x * mu_y
-
-        SSIM_n = (2 * mu_x * mu_y + self.C1) * (2 * sigma_xy + self.C2)
-        SSIM_d = (mu_x ** 2 + mu_y ** 2 + self.C1) * (sigma_x + sigma_y + self.C2)
-
-        return torch.clamp((1 - SSIM_n / SSIM_d) / 2, 0, 1)
 
 
 class SCI_loss(nn.Module):
@@ -141,9 +110,13 @@ class SCI_loss(nn.Module):
         loss_in = self.L2loss(in_list[0], in_list[1])
 
         loss_illu = mean_illumination(L_list[0], nL_list[0]) + mean_illumination(L_list[1], nL_list[1])
-        loss_ex = self.SSIM(R_list[0], R_list[0] * nL_list[0]) + self.SSIM(R_list[1], R_list[1] * nL_list[1])
+        new_img0 = R_list[0] * torch.cat([nL_list[0], nL_list[0], nL_list[0]], 1)
+        new_img1 = R_list[1] * torch.cat([nL_list[1], nL_list[1], nL_list[1]], 1)
+        R0 = R_list[0]
+        R1 = R_list[1]
+        loss_ex = 1 - self.SSIM(R0, new_img0) + self.SSIM(R1, new_img1)
 
-        return 2 * loss_R + 2 * loss_L + 0.1 * loss_smooth + loss_in + 2 * loss_illu + 0.5 * loss_ex
+        return 2 * loss_R + 2 * loss_L + 0.1 * loss_smooth + loss_in + loss_illu + 0.1 * loss_ex
 
 
 # class judge_loss(nn.Module):

@@ -50,7 +50,7 @@ class Discriminator(nn.Module):
 class Overexposure_net(nn.Module):
     def __init__(self):
         super(Overexposure_net, self).__init__()
-        self.Loss = judge_loss()
+        # self.Loss = judge_loss()
         self.conv_L = nn.Sequential(nn.Conv2d(1, 8, kernel_size=3, stride=1, padding=1, padding_mode='reflect'))
         self.conv_R = nn.Sequential(nn.Conv2d(3, 8, kernel_size=3, stride=1, padding=1, padding_mode='reflect'))
         self.out_convs = nn.Sequential(
@@ -67,7 +67,7 @@ class Overexposure_net(nn.Module):
         x2 = self.conv_R(x2)
         x = torch.cat([x1, x2], 1)
         new_L = self.out_convs(x)
-        return new_L, L, R
+        return new_L
 
     # def cal_loss(self, new_L, L, R):
     #     return judge_loss(new_L, L, R)

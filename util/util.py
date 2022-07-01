@@ -46,7 +46,7 @@ def sample(R, L, i, img, name):
     unloader = transform.ToPILImage()
 
     input = img
-    input_name = "./run/" + name + '/' + str(i) + "_pre.jpg"
+    input_name = name + '/' + str(i) + "_pre.jpg"
     input = input.cpu().detach().numpy()
     input = np.clip(input * 255.0, 0, 255).astype(np.uint8)
     # input = RGB2BGR(input)
@@ -65,14 +65,14 @@ def sample(R, L, i, img, name):
 
     L = torch.cat([L, L, L])
     out_no_noise = R * L
-    out_no_noise_name = "./run/" + name + '/' + str(i) + "_gen.jpg"
+    out_no_noise_name = name + '/' + str(i) + "_gen.jpg"
     out_no_noise = out_no_noise.cpu().detach().numpy()
     out_no_noise = np.clip(out_no_noise * 255.0, 0, 255).astype(np.uint8)
     # img_no_noise = Image.fromarray(np.uint8(out_no_noise))
     img_no_noise = unloader(out_no_noise.transpose([1, 2, 0]))
     img_no_noise.save(out_no_noise_name)
 
-    out_R_name = "./run/" + name + '/' + str(i) + "_R.jpg"
+    out_R_name = name + '/' + str(i) + "_R.jpg"
     out_R = R.cpu().detach().numpy()
     out_R = np.clip(out_R * 255.0, 0, 255).astype(np.uint8)
     img_R = unloader(out_R.transpose([1, 2, 0]))
