@@ -94,9 +94,9 @@ class Network(nn.Module):
 class Testnet(nn.Module):
     def __init__(self):
         super(Testnet, self).__init__()
-        self.decom = KD_decom_s()
+        self.decom = KD_decom()
         self.enhance_net = enhance_net()
-        self.exposure = Overexposure_net()
+        # self.exposure = Overexposure_net()
 
     def forward(self, input, r):
         x = input

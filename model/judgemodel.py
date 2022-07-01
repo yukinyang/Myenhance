@@ -1,4 +1,5 @@
 from model.model import *
+from model.SCImodel import *
 from util.loss import *
 
 import torch
@@ -71,6 +72,43 @@ class Overexposure_net(nn.Module):
 
     # def cal_loss(self, new_L, L, R):
     #     return judge_loss(new_L, L, R)
+
+
+class Overexposure_net_weight(nn.Module):
+    def __init__(self):
+        super(Overexposure_net_weight, self).__init__()
+        self.convs = self.make_convs()
+        self.loss = exposure_loss()
+
+    def make_convs(self):
+        layers = []
+        layers.append(nn.Sequential(
+            nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(16, 16, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(16, 1, kernel_size=1),
+            nn.Sigmoid(),
+        ))
+        return nn.Sequential(*layers)
+
+    def forward(self, L, R, U, stage=3):
+        L_list = []
+        x_list = []
+        img_list = []
+        for i in range(stage):
+            L_3 = torch.cat([L, L, L], 1)
+            img = L_3 * R
+            x = self.convs(img)
+            L_list.append(L)
+            x_list.append(x)
+            img_list.append(img)
+            L = L + x * U
+        return L_list, x_list, img_list
+
+    def cal_loss(self, L_list, x_list, img_list, stage=3):
+        return self.loss(L_list, x_list, img_list, stage)
+
 
 
 

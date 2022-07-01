@@ -109,14 +109,15 @@ class SCI_loss(nn.Module):
         loss_smooth = smooth_R(R_list[0]) + smooth_R(R_list[1])
         loss_in = self.L2loss(in_list[0], in_list[1])
 
-        loss_illu = mean_illumination(L_list[0], nL_list[0]) + mean_illumination(L_list[1], nL_list[1])
-        new_img0 = R_list[0] * torch.cat([nL_list[0], nL_list[0], nL_list[0]], 1)
-        new_img1 = R_list[1] * torch.cat([nL_list[1], nL_list[1], nL_list[1]], 1)
-        R0 = R_list[0]
-        R1 = R_list[1]
-        loss_ex = 1 - self.SSIM(R0, new_img0) + self.SSIM(R1, new_img1)
+        # loss_illu = mean_illumination(L_list[0], nL_list[0]) + mean_illumination(L_list[1], nL_list[1])
+        # new_img0 = R_list[0] * torch.cat([nL_list[0], nL_list[0], nL_list[0]], 1)
+        # new_img1 = R_list[1] * torch.cat([nL_list[1], nL_list[1], nL_list[1]], 1)
+        # R0 = R_list[0]
+        # R1 = R_list[1]
+        # loss_ex = 1 - self.SSIM(R0, new_img0) + self.SSIM(R1, new_img1)
 
-        return 2 * loss_R + 2 * loss_L + 0.1 * loss_smooth + loss_in + loss_illu + 0.1 * loss_ex
+        # return 2 * loss_R + 2 * loss_L + 0.1 * loss_smooth + loss_in + loss_illu + 0.1 * loss_ex
+        return 2 * loss_R + 2 * loss_L + 0.1 * loss_smooth + loss_in
 
 
 # class judge_loss(nn.Module):
@@ -141,6 +142,33 @@ class SCI_loss(nn.Module):
 #         return loss_L + loss_illumination + loss_exposure
 
 
+class exposure_loss(nn.Module):
+    def __init__(self):
+        super(exposure_loss, self).__init__()
+        self.L1loss = nn.L1Loss()
+        self.L2loss = nn.MSELoss()
 
+    def x_size_loss(self, x):
+        x = torch.mean(x)
+        return 1 - x
+
+    def x_img_loss(self, x, img):
+        img = tensor_gray(img)
+        img = img.unsqueeze(1)
+        return torch.mean(x * (torch.exp(img) - 1))
+
+    def forward(self, L_list, x_list, img_list, stage=3):
+        # x要尽可能大
+        # x要在图像亮的地方小，这里用x*(exp(img) - 1)作为损失函数
+        # img要进行一致性损失
+        loss_xsize = 0
+        loss_ximg = 0
+        loss_img = 0
+        for i in range(stage):
+            loss_xsize = loss_xsize + self.x_size_loss(x_list[i])
+            loss_ximg = loss_ximg + self.x_img_loss(x_list[i], img_list[i])
+        for i in range(stage - 1):
+            loss_img = loss_img + self.L2loss(img_list[i], img_list[i + 1])
+        return loss_xsize + loss_ximg + loss_img
 
 

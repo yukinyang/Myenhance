@@ -79,13 +79,9 @@ if __name__ == '__main__':
 
 
     x = torch.randn([8, 1, 20, 40])
-    y = torch.randn([8, 3, 20, 40])
-
-    loss_SSIM = pytorch_ssim.SSIM()
-    loss = loss_SSIM(x, y)
-    loss1 = loss_SSIM(x, x)
-    print(loss)
-    print(loss1)
+    sig = nn.Sigmoid()
+    x = sig(x)
+    print(1 - x)
 
 
 
