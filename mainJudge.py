@@ -44,11 +44,13 @@ if __name__ == '__main__':
     model0.eval()
 
     model = Overexposure_net_weight()
+    Loss_ex = exposure_loss()
 
     cuda = torch.cuda.is_available()
     Tensor = torch.cuda.FloatTensor if cuda else torch.Tensor
     if cuda:
         model.cuda()
+        Loss_ex.cuda()
 
     optimizer = torch.optim.Adam(
         model.parameters(), lr=opt.lr, betas=(0.9, 0.999)
@@ -75,8 +77,9 @@ if __name__ == '__main__':
     print(len(dataloader))
 
     now = 0
-    nowloss = 0
+    numbatches = len(dataloader)
     for epoch in range(0, opt.epochs):
+        nowloss = 0
         for i, batch in enumerate(dataloader):
             # set model input
             input = Variable(batch['img'].type(Tensor))
@@ -87,12 +90,23 @@ if __name__ == '__main__':
 
             R, L = model0.decom(input)
             U = model0.enhance_net(R)
-            L_list, x_list, img_list = model(L, R, U, opt.stage)
+
+            # 改变训练策略
+            x_list = []
+            img_list = []
+            for i in range(1, 51):
+                x, img = model(L, R)
+                if i % 5 == 0:
+                    x_list.append(x)
+                    img_list.append(img)
+                L = L + U * x
+
+            # L_list, x_list, img_list = model(L, R, U, opt.stage)
 
             # Calculate loss
-            Loss = model.cal_loss(L_list, x_list, img_list, opt.stage)
-            # Loss = loss_l1
-            nowloss = Loss
+            # Loss = model.cal_loss(x_list, img_list, opt.stage)
+            Loss = Loss_ex(x_list, img_list, len(x_list))
+            nowloss = nowloss + Loss
             Loss.backward()
             optimizer.step()
             now += 1
@@ -101,6 +115,7 @@ if __name__ == '__main__':
         if (epoch >= 49 and (epoch + 1) % 50 == 0) or epoch == 1:
             model_path = './save/' + str(epoch + 1) + '_model_EX.pth'
             torch.save({'Ex': model.state_dict()}, model_path)
+        nowloss = nowloss / numbatches
         print("epoch: " + str(epoch) + "   Loss: " + str(nowloss.cpu().detach().numpy()))
         print("======== epoch " + str(epoch) + " has been finished ========")
 

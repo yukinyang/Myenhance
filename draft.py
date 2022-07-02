@@ -9,6 +9,7 @@ import os
 import numpy as np
 import torch
 import argparse
+from mpl_toolkits.mplot3d import Axes3D
 from torch.autograd import Variable
 from matplotlib import pyplot as plt
 from util.loss import *
@@ -78,10 +79,27 @@ if __name__ == '__main__':
     # print(name)
 
 
-    x = torch.randn([8, 1, 20, 40])
-    sig = nn.Sigmoid()
-    x = sig(x)
-    print(1 - x)
+    # img = cv2.imread('img.png', cv2.IMREAD_GRAYSCALE)
+    # # cv2.imshow('img', img)
+    # # cv2.waitKey()
+    # np_img = np.array(img)
+    # np.savetxt('np_img.txt', np_img, fmt='%d')
+
+    figure = plt.figure('1')
+    ax = Axes3D(figure)  # 设置图像为三维格式
+    X = np.arange(0, 1, 0.01)
+    Y = np.arange(0, 1, 0.01)  # X,Y的范围
+    X, Y = np.meshgrid(X, Y)  # 绘制网格
+    Z = ((np.exp(1.5 * X) - 2) * (np.exp(1.5 * Y) - 2)) # f(x,y)=(sin(x)*sin(y))/(x*y),注意括号
+    ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap='rainbow')
+
+    figure = plt.figure('2')
+    X = np.arange(0, 1, 0.01)
+    Y = (np.exp(1.5 * X) - 2)  # f(x,y)=(sin(x)*sin(y))/(x*y),注意括号
+    plt.plot(X, Y)
+
+    # 绘制3D图，后面的参数为调节图像的格式
+    plt.show()  # 展示图片
 
 
 

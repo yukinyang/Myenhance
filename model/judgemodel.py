@@ -93,6 +93,11 @@ class Overexposure_net_weight(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, L, R, U, stage=3):
+        if stage == 0:
+            L_3 = torch.cat([L, L, L], 1)
+            img = L_3 * R
+            x = self.convs(img)
+            return L, x, img
         L_list = []
         x_list = []
         img_list = []
@@ -110,7 +115,30 @@ class Overexposure_net_weight(nn.Module):
         return self.loss(L_list, x_list, img_list, stage)
 
 
-
+# class Overexposure_net_weight(nn.Module):
+#     def __init__(self):
+#         super(Overexposure_net_weight, self).__init__()
+#         self.convs = self.make_convs()
+#         self.loss = exposure_loss()
+#
+#     def make_convs(self):
+#         layers = []
+#         layers.append(nn.Sequential(
+#             nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1),
+#             nn.ReLU(inplace=True),
+#             nn.Conv2d(16, 16, kernel_size=3, stride=1, padding=1),
+#             nn.ReLU(inplace=True),
+#             nn.Conv2d(16, 1, kernel_size=1),
+#             nn.Sigmoid(),
+#         ))
+#         return nn.Sequential(*layers)
+#
+#     def forward(self, L, R):
+#         L_3 = torch.cat([L, L, L], 1)
+#         img = L_3 * R
+#         img = torch.clamp(img, 0, 1)
+#         x = self.convs(img)
+#         return x, img
 
 
 

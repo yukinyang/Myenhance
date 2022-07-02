@@ -155,9 +155,11 @@ class exposure_loss(nn.Module):
     def x_img_loss(self, x, img):
         img = tensor_gray(img)
         img = img.unsqueeze(1)
-        return torch.mean(x * (torch.exp(img) - 1))
+        loss = (torch.exp(1.5 * x) - 2) * (torch.exp(1.5 * img) - 2) + 1
+        loss = torch.clamp(loss, 0, 5)
+        return torch.mean(loss)
 
-    def forward(self, L_list, x_list, img_list, stage=3):
+    def forward(self, x_list, img_list, stage=3):
         # x要尽可能大
         # x要在图像亮的地方小，这里用x*(exp(img) - 1)作为损失函数
         # img要进行一致性损失
@@ -169,6 +171,6 @@ class exposure_loss(nn.Module):
             loss_ximg = loss_ximg + self.x_img_loss(x_list[i], img_list[i])
         for i in range(stage - 1):
             loss_img = loss_img + self.L2loss(img_list[i], img_list[i + 1])
-        return loss_xsize + loss_ximg + loss_img
+        return 0.2 * loss_xsize + 0.2 * loss_ximg + 2 * loss_img
 
 

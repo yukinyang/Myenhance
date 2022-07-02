@@ -96,16 +96,33 @@ class Testnet(nn.Module):
         super(Testnet, self).__init__()
         self.decom = KD_decom()
         self.enhance_net = enhance_net()
-        # self.exposure = Overexposure_net()
+        self.exposure = Overexposure_net_weight()
+
+    def make_convs(self):
+        layers = []
+        layers.append(nn.Sequential(
+            nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(16, 16, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(16, 1, kernel_size=1),
+            nn.Sigmoid(),
+        ))
+        return nn.Sequential(*layers)
 
     def forward(self, input, r):
         x = input
         R, L = self.decom(x)
         U = self.enhance_net(R)
+        L_list, x_list, img_list = self.exposure(L, R, U, r)
+        # print('len(L_list)', len(L_list))
         for i in range(r):
             L = L + self.enhance_net(R)
             # L = self.exposure(L, R)
-            # L = torch.clamp(L, 0.0000001, 1)
+        # if len(L_list) == 1:
+        #     L = L_list
+        # else:
+        #     L = L_list[-1]
         L = torch.cat([L, L, L], 1)
         newR = R * L
         newR = torch.clamp(newR, 0, 1)
