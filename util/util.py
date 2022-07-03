@@ -42,6 +42,15 @@ def RGB2BGR(input):
     return output
 
 
+def MAXC(input):
+    R = input[:, 0, :, :]
+    G = input[:, 1, :, :]
+    B = input[:, 2, :, :]
+    out = torch.max(R, torch.max(G, B))
+    out.unsqueeze(1)
+    return out
+
+
 def sample(R, L, i, img, name):
     unloader = transform.ToPILImage()
 
@@ -54,14 +63,6 @@ def sample(R, L, i, img, name):
     # img = Image.fromarray(np.uint8(input))
     img = unloader(input.transpose([1, 2, 0]))
     img.save(input_name)
-
-    # out = R * L + E
-    # out_name = "./run/" + str(i) + "_with_noise.jpg"
-    # out = out.cpu().detach().numpy()
-    # out = np.clip(out * 255.0, 0, 255).astype(np.uint8)
-    # # img = Image.fromarray(np.uint8(out))
-    # img = unloader(out.transpose([1, 2, 0]))
-    # img.save(out_name)
 
     L = torch.cat([L, L, L])
     out_no_noise = R * L
@@ -77,6 +78,28 @@ def sample(R, L, i, img, name):
     out_R = np.clip(out_R * 255.0, 0, 255).astype(np.uint8)
     img_R = unloader(out_R.transpose([1, 2, 0]))
     img_R.save(out_R_name)
+
+
+def sample_single_img(i, img, name, dir):
+    unloader = transform.ToPILImage()
+
+    input = img
+    input_name = dir + '/' + str(i) + "_" + name + ".jpg"
+    input = input.cpu().detach().numpy()
+    input = np.clip(input * 255.0, 0, 255).astype(np.uint8)
+    img = unloader(input.transpose([1, 2, 0]))
+    img.save(input_name)
+
+
+def sample_gray_img(i, img_gray, name, dir):
+    if len(img_gray.shape) == 3:
+        img_gray = img_gray.squeeze(0)
+    input = img_gray
+    input_name = dir + '/' + str(i) + "_" + name + ".jpg"
+    input = input.cpu().detach().numpy()
+    input = np.clip(input * 255.0, 0, 255).astype(np.uint8)
+    img = Image.fromarray(input)
+    img.convert('L').save(input_name)
 
 
 def get_dir_name(path, name):

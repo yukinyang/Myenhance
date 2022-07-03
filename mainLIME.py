@@ -1,47 +1,51 @@
 from model.model import *
+from model.LIMEmodel import *
 from util.util import *
 from util.loss import *
+from util.loss_LIME import *
 from dataset.dataset import *
-from model.SCImodel import *
 from test import *
 
 import argparse
 import os
 import numpy as np
+from tqdm import tqdm
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
-from tqdm import tqdm
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 
 
 def getparser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--batch_size", type=int, default=6)
+    parser.add_argument("--epochs", type=int, default=200)
+    parser.add_argument("--save_epochs", type=int, default=100)
+    parser.add_argument("--per_epochs", type=int, default=50)
+    parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--n_cpus", type=int, default=1)
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--data_path", type=str, default='../LOLdataset/imgs/')
-    # parser.add_argument("--data_path", type=str, default='./imgs/')
     parser.add_argument("--img_size", type=int, default=[400, 600])
+    parser.add_argument("--stage", type=int, default=5)
+    parser.add_argument("--Epsilon", type=int, default=0.000001)
     parser.add_argument("--decay_epoch", type=int, default=200)
 
     print(parser.parse_args())
     return parser.parse_args()
 
 
-def SCItrain_stagemode():
+def LIMEtrain():
     opt = getparser()
 
-    model = Network()
-    Loss_l1 = nn.L1Loss()
+    model = LIME_decom(numlayers=3)
+    LOSS = LIMEloss()
 
     cuda = torch.cuda.is_available()
     Tensor = torch.cuda.FloatTensor if cuda else torch.Tensor
     if cuda:
         model.cuda()
-        Loss_l1.cuda()
+        LOSS.cuda()
 
     optimizer = torch.optim.Adam(
         model.parameters(), lr=opt.lr, betas=(0.9, 0.999)
@@ -67,56 +71,58 @@ def SCItrain_stagemode():
     )
     print(len(dataloader))
 
-    checkpoint = torch.load('./save/200_decom_LOLset.pth')
-    model.decom.load_state_dict(checkpoint['KD'])
-
     now = 0
     numbatches = len(dataloader)
+
+    run_dir = get_dir_name('./run', 'LIME_train')
+    os.makedirs(run_dir)
+
     for epoch in range(0, opt.epochs):
         pbar = enumerate(dataloader)
         pbar = tqdm(pbar, total=numbatches)
         nowloss = 0
-        for i, batch in enumerate(dataloader):
-            # set model input
+        for i, batch in pbar:
             input = Variable(batch['img'].type(Tensor))
-            # print(input.shape)
 
             # Train
             model.train()
             optimizer.zero_grad()
 
-            in_list, R_list, L_list, U_list, nL_list = model(input)
+            L_list = []
+            L_list.append(MAXC(input))
+            for i in range(opt.stage):
+                L = model(input)
+                L_list.append(L)
 
             # Calculate loss
-            Loss = model.cal_loss(in_list, R_list, L_list, nL_list)
-            # Loss = loss_l1
+            Loss = LOSS(L_list)
             nowloss = nowloss + Loss
+
             Loss.backward()
             optimizer.step()
             now += 1
 
-            # if now % 40 == 0:
-            #     sample(R[0, :, :, :], L[0, :, :, :], E[0, :, :, :], now, input[0, :, :, :])
+            if now % 101 == 0:
+                # save 2 groups
+                sample_gray_img(i, L[0, :, :, :], name='L', dir=run_dir)
+                sample_single_img(i, input[0, :, :, :], name='input', dir=run_dir)
+                sample_single_img(i, input[0, :, :, :] / (L[0, :, :, :] + opt.Epsilon), name='R', dir=run_dir)
+
+                sample_gray_img(i + 1, L[1, :, :, :], name='L', dir=run_dir)
+                sample_single_img(i + 1, input[1, :, :, :], name='input', dir=run_dir)
+                sample_single_img(i + 1, input[1, :, :, :] / (L[1, :, :, :] + opt.Epsilon), name='R', dir=run_dir)
+
         lr_scheduler.step()
-        if (epoch >= 49 and (epoch + 1) % 50 == 0) or epoch == 1:
-            model_KD_path = './save/' + str(epoch + 1) + '_SCI_model_KD.pth'
-            model_enhance_path = './save/' + str(epoch + 1) + '_SCI_model_EN.pth'
-            # model_ex_path = './save/' + str(epoch + 1) + '_SCI_model_EX.pth'
-            torch.save({'KD':model.decom.state_dict()}, model_KD_path)
-            torch.save({'Enhance':model.enhance_net.state_dict()}, model_enhance_path)
-            # torch.save({'Ex':model.exposure.state_dict()}, model_ex_path)
-        nowloss = nowloss / numbatches
+        if (epoch >= (opt.save_epochs - 1) and (epoch + 1) % opt.per_epochs == 0):
+            model_path = './save/' + str(epoch + 1) + '_LIME_decom.pth'
+            torch.save({'LIME': model.state_dict()}, model_path)
         print("epoch: " + str(epoch) + "   Loss: " + str(nowloss.cpu().detach().numpy()))
         print("======== epoch " + str(epoch) + " has been finished ========")
 
-    run_dir = get_dir_name('./run', 'SCItest')
-    os.makedirs(run_dir)
-    SCITest(run_dir)
+
 
 if __name__ == '__main__':
-    SCItrain_stagemode()
-
-
+    LIMEtrain()
 
 
 

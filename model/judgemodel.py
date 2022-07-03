@@ -143,7 +143,32 @@ class Overexposure_net_weight(nn.Module):
         return x, img
 
 
+class illu_enhance(nn.Module):
+    def __init__(self):
+        super(illu_enhance, self).__init__()
+        self.convs = self.make_convs()
+        self.loss = exposure_loss()
 
+    def make_convs(self):
+        layers = []
+        layers.append(nn.Sequential(
+            nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(32, 32, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(32, 16, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(16, 1, kernel_size=1),
+            nn.Sigmoid(),
+        ))
+        return nn.Sequential(*layers)
+
+    def forward(self, L, R):
+        L_3 = torch.cat([L, L, L], 1)
+        img = L_3 * R
+        img = torch.clamp(img, 0, 1)
+        x = self.convs(img)
+        return x, img
 
 
 

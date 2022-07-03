@@ -58,32 +58,6 @@ def SCITest():
 
 
 if __name__ == '__main__':
-    # img_list = sorted(glob.glob('G:/datasets/LOLdataset/our485/low' + "/*.*"))
-    # print(img_list)
-    # for img in img_list:
-    #     name = img
-    #     newname = img[0 : len(name) - 4] + '_l.png'
-    #     # print(newname)
-    #     os.rename(img, newname)
-
-
-    # dirs = os.listdir('./run//')
-    # print(dirs)
-    # i = 0
-    # name = 'runs'
-    # for i in range(1, 10000):
-    #     newdir = name + str(i)
-    #     if newdir not in dirs:
-    #         name = newdir
-    #         break
-    # print(name)
-
-
-    # img = cv2.imread('img.png', cv2.IMREAD_GRAYSCALE)
-    # # cv2.imshow('img', img)
-    # # cv2.waitKey()
-    # np_img = np.array(img)
-    # np.savetxt('np_img.txt', np_img, fmt='%d')
 
     # figure = plt.figure('1')
     # ax = Axes3D(figure)  # 设置图像为三维格式
@@ -101,44 +75,64 @@ if __name__ == '__main__':
     # # 绘制3D图，后面的参数为调节图像的格式
     # plt.show()  # 展示图片
 
-    torch.cuda.empty_cache()
-    opt = getparser()
+    # torch.cuda.empty_cache()
+    # opt = getparser()
+    #
+    # transforms_ = [
+    #     transforms.Resize(opt.img_size, Image.BICUBIC),
+    #     transforms.ToTensor(),
+    # ]
+    # TestDataset = ImageDataset(root=opt.data_path, transform_=transforms_)
+    # test_imgs = torch.utils.data.DataLoader(
+    #     TestDataset,
+    #     batch_size=1,
+    #     pin_memory=True,
+    #     num_workers=0)
+    #
+    # model = Testnet()
+    # model.cuda()
+    #
+    # checkpoint_decom = torch.load('./save/_SCI_model_KD.pth')
+    # checkpoint_enhance = torch.load('./save/_SCI_model_EN.pth')
+    # # checkpoint_ex = torch.load('./save/100_SCI_model_EX.pth')
+    # model.decom.load_state_dict(checkpoint_decom['KD'])
+    # model.enhance_net.load_state_dict(checkpoint_enhance['Enhance'])
+    # # model.exposure.load_state_dict(checkpoint_ex['Ex'])
+    #
+    # model.eval()
+    #
+    # with torch.no_grad():
+    #     for i, input in enumerate(test_imgs):
+    #         input = Variable(input['img'], volatile=True).cuda()
+    #
+    #         R, L = model.decom(input)
+    #         U = model.enhance_net(R)
+    #         print(U.shape)
+    #         U = U[0, :, :, :]
+    #         U = U[0, :, :]
+    #         print(U)
+    #         U = U.cpu().detach().numpy()
+    #         np.savetxt('np_U.txt', U, fmt='%f')
+    #         L = L[0, :, :, :]
+    #         L = L[0, :, :]
+    #         print(L)
+    #         L = L.cpu().detach().numpy()
+    #         np.savetxt('np_L.txt', L, fmt='%f')
 
-    transforms_ = [
-        transforms.Resize(opt.img_size, Image.BICUBIC),
-        transforms.ToTensor(),
-    ]
-    TestDataset = ImageDataset(root=opt.data_path, transform_=transforms_)
-    test_imgs = torch.utils.data.DataLoader(
-        TestDataset,
-        batch_size=1,
-        pin_memory=True,
-        num_workers=0)
 
-    model = Testnet()
-    model.cuda()
+    img = torch.randn([1, 20, 30])
+    sample_gray_img(1, img, 'gray', './run')
 
-    checkpoint_decom = torch.load('./save/100_SCI_model_KD_yuan.pth')
-    checkpoint_enhance = torch.load('./save/100_SCI_model_EN_yuan.pth')
-    # checkpoint_ex = torch.load('./save/100_SCI_model_EX.pth')
-    model.decom.load_state_dict(checkpoint_decom['KD'])
-    model.enhance_net.load_state_dict(checkpoint_enhance['Enhance'])
-    # model.exposure.load_state_dict(checkpoint_ex['Ex'])
 
-    model.eval()
 
-    with torch.no_grad():
-        for i, input in enumerate(test_imgs):
-            input = Variable(input['img'], volatile=True).cuda()
 
-            R, L = model.decom(input)
-            U = model.enhance_net(R)
-            print(U.shape)
-            U = U[0, :, :, :]
-            U = U[0, :, :]
-            print(U)
-            U = U.cpu().detach().numpy()
-            np.savetxt('np_U.txt', U, fmt='%f')
+
+
+
+
+
+
+
 
 
 

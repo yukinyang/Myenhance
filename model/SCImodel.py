@@ -94,6 +94,29 @@ class Network(nn.Module):
         return loss
 
 
+class Network_nostage(nn.Module):
+    def __init__(self, enhance=True, layers=3, weights=None):
+        super(Network_nostage, self).__init__()
+
+        self.enhance = enhance
+        self.Loss = SCI_loss()
+        self.decom = KD_decom()
+        self.enhance_net = enhance_net(layers)
+        # self.exposure = Overexposure_net()
+
+    def forward(self, input, mid):
+        x = input
+        R, L = self.decom(x)
+        U = self.enhance_net(R)
+        L = L + U * mid
+        nL_3 = torch.cat([L, L, L], 1)
+        if self.enhance:
+            nx = R * nL_3
+        else:
+            nx = x
+        return R, L, U, nx
+
+
 class Testnet(nn.Module):
     def __init__(self):
         super(Testnet, self).__init__()

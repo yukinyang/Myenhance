@@ -123,28 +123,6 @@ class SCI_loss(nn.Module):
         return 2 * loss_R + 0.1 * loss_smooth + loss_in + loss_L
 
 
-# class judge_loss(nn.Module):
-#     def __init__(self):
-#         super(judge_loss, self).__init__()
-#         self.L1loss = nn.L1Loss()
-#         self.L2loss = nn.MSELoss()
-#
-#     def exposure_loss(self, new_L, L, R, thr=0.8):
-#         img = L * R
-#         target = torch.where(img > thr, R, L)
-#         return self.L2loss(new_L, target)
-#
-#     def forward(self, new_L, L, R):
-#         # SSIM损失，new_L*R与img（L*R）
-#         # 过曝损失，R中该处越亮，new_L中此处应该越小
-#         # new_L与L应该是相似的亮度
-#         loss_illumination = torch.abs(mean_illumination(new_L) - mean_illumination(L))
-#         R_1 = tensor_gray_3(R).unsqueeze(0)
-#         loss_L = self.L2loss(new_L, R_1)
-#         loss_exposure = self.exposure_loss(new_L, L, R)
-#         return loss_L + loss_illumination + loss_exposure
-
-
 class exposure_loss(nn.Module):
     def __init__(self):
         super(exposure_loss, self).__init__()
