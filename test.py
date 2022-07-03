@@ -13,6 +13,7 @@ from util.loss import *
 def getparser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_path', type=str, default='./testimg', help='location of the data corpus')
+    # parser.add_argument('--data_path', type=str, default='./1', help='location of the data corpus')
     parser.add_argument('--save_path', type=str, default='./run', help='location of the data corpus')
     parser.add_argument("--img_size", type=int, default=[300, 400])
 
@@ -83,10 +84,10 @@ def SCITest(Savedir):
 
     checkpoint_decom = torch.load('./save/100_SCI_model_KD_yuan.pth')
     checkpoint_enhance = torch.load('./save/100_SCI_model_EN_yuan.pth')
-    checkpoint_ex = torch.load('./save/100_SCI_model_EX.pth')
+    # checkpoint_ex = torch.load('./save/100_SCI_model_EX.pth')
     model.decom.load_state_dict(checkpoint_decom['KD'])
     model.enhance_net.load_state_dict(checkpoint_enhance['Enhance'])
-    model.exposure.load_state_dict(checkpoint_ex['Ex'])
+    # model.exposure.load_state_dict(checkpoint_ex['Ex'])
 
     model.eval()
     for rr in range(0, 51):
@@ -156,9 +157,9 @@ def ExxposureTest(Savedir):
 
 
 if __name__ == '__main__':
-    run_dir = get_dir_name('./run', 'Exposuretest')
+    run_dir = get_dir_name('./run', 'SCItest')
     os.makedirs(run_dir)
-    ExxposureTest(run_dir)
+    SCITest(run_dir)
 
 
 

@@ -40,7 +40,8 @@ class enhance_net(nn.Module):
         for conv in self.convs:
             x = x + conv(x)
         x = self.out_convs(x)
-        x = torch.clamp(x, 0, self.range)
+        # x = torch.clamp(x, 0, self.range)
+        x = x / (1 / self.range)
         return x
 
 
@@ -52,9 +53,9 @@ class Network(nn.Module):
         self.stage = stage
         self.enhance = enhance
         self.Loss = SCI_loss()
-        self.decom = KD_decom_s()
+        self.decom = KD_decom()
         self.enhance_net = enhance_net(layers)
-        self.exposure = Overexposure_net()
+        # self.exposure = Overexposure_net()
 
     def forward(self, input):
         x = input
@@ -73,10 +74,12 @@ class Network(nn.Module):
             R_list.append(R)
             L_list.append(L)
             U_list.append(U)
+            L = L + U
+            nL_3 = torch.cat([L, L, L], 1)
 
-            nL = self.exposure(L + U, R)
-            nL_3 = torch.cat([nL, nL, nL], 1)
-            nL_list.append(nL)
+            # nL = self.exposure(L + U, R)
+            # nL_3 = torch.cat([nL, nL, nL], 1)
+            # nL_list.append(nL)
 
             # U = torch.cat([U, U, U], 1)
             if self.enhance:
@@ -114,10 +117,13 @@ class Testnet(nn.Module):
         x = input
         R, L = self.decom(x)
         U = self.enhance_net(R)
-        L_list, x_list, img_list = self.exposure(L, R, U, r)
+        # U = 0.1 - U
+        # L_list, x_list, img_list = self.exposure(L, R, U, r)
         # print('len(L_list)', len(L_list))
         for i in range(r):
-            L = L + self.enhance_net(R)
+            # x, img = self.exposure(L, R)
+            # L = L + x * U
+            L = L + U
             # L = self.exposure(L, R)
         # if len(L_list) == 1:
         #     L = L_list

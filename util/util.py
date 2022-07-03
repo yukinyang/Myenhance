@@ -86,6 +86,7 @@ def get_dir_name(path, name):
         if newname not in dirs:
             name = newname
             break
+    print('run dir is:   ', path + '/' + name)
     return path + '/' + name
 
 

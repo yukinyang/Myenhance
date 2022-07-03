@@ -98,14 +98,17 @@ class SCI_loss(nn.Module):
         self.L2loss = nn.MSELoss()
         self.SSIM = SSIM()
 
+    def illu_loss(self, x, img):
+        img = tensor_gray(img)
+        img = img.unsqueeze(1)
+        loss = (torch.exp(1.5 * x) - 2) * (torch.exp(1.5 * img) - 2) + 1
+        loss = torch.clamp(loss, 0, 5)
+        return torch.mean(loss)
+
     def forward(self, in_list, R_list, L_list, nL_list, stage=2):
         # stage = 2
         loss_R = self.L2loss(R_list[0], R_list[1]) + self.L2loss(R_list[0], in_list[0]) + self.L2loss(R_list[1], in_list[1])
-        in0 = tensor_gray(in_list[0])
-        in1 = tensor_gray(in_list[1])
-        in0 = in0.unsqueeze(1)
-        in1 = in1.unsqueeze(1)
-        loss_L = self.L2loss(in0, L_list[0]) + self.L2loss(in1, L_list[1])
+        loss_L = self.illu_loss(L_list[0], in_list[0]) + self.illu_loss(L_list[1], in_list[1])
         loss_smooth = smooth_R(R_list[0]) + smooth_R(R_list[1])
         loss_in = self.L2loss(in_list[0], in_list[1])
 
@@ -117,7 +120,7 @@ class SCI_loss(nn.Module):
         # loss_ex = 1 - self.SSIM(R0, new_img0) + self.SSIM(R1, new_img1)
 
         # return 2 * loss_R + 2 * loss_L + 0.1 * loss_smooth + loss_in + loss_illu + 0.1 * loss_ex
-        return 2 * loss_R + 2 * loss_L + 0.1 * loss_smooth + loss_in
+        return 2 * loss_R + 0.1 * loss_smooth + loss_in + loss_L
 
 
 # class judge_loss(nn.Module):
