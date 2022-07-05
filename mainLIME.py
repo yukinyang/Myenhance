@@ -22,6 +22,7 @@ def getparser():
     parser.add_argument("--epochs", type=int, default=60)
     parser.add_argument("--save_epochs", type=int, default=10)
     parser.add_argument("--per_epochs", type=int, default=20)
+    parser.add_argument("--per_samples", type=int, default=501)
     parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--n_cpus", type=int, default=1)
     parser.add_argument("--lr", type=float, default=0.001)
@@ -88,6 +89,7 @@ def LIMEtrain():
         nowloss = 0
         for i, batch in pbar:
             input = Variable(batch['img'].type(Tensor))
+            sample_input = input
 
             # Train
             model.train()
@@ -107,7 +109,8 @@ def LIMEtrain():
             for i in range(opt.stage):
                 imgC_list.append(MAXC(input))
                 R, L, U, nR, nL = model(input)
-                input = R * L
+                nL_3 = torch.cat([nL, nL, nL], 1)
+                input = R * nL_3
                 input = torch.clamp(input, 0, 1)
                 # print(R.shape, L.shape)
                 # print(L.shape)
@@ -126,30 +129,49 @@ def LIMEtrain():
             optimizer.step()
             now += 1
 
-            if now % 101 == 0:
-                L = model(input)
-                # save 2 groups
-                L1 = L[0, :, :, :]
-                sample_gray_img(now, L1, name='L', dir=run_dir)
-                sample_single_img(now, input[0, :, :, :], name='input', dir=run_dir)
-                R = input[0, :, :, :] / (L[0, :, :, :] + opt.Epsilon)
-                R = torch.clamp(R, 0, 1)
-                # R1 = R[0, :, :, :]
-                sample_single_img(now, R, name='R', dir=run_dir)
-                # L1_3 = torch.cat([L1, L1, L1], 0)
-                # img1 = R1 * L1_3
-                # sample_single_img(now, img1, name='rec', dir=run_dir)
-
-                L2 = L[1, :, :, :]
-                sample_gray_img(now + 1, L2, name='L', dir=run_dir)
-                sample_single_img(now + 1, input[1, :, :, :], name='input', dir=run_dir)
-                R = input[1, :, :, :] / (L[1, :, :, :] + opt.Epsilon)
-                R = torch.clamp(R, 0, 1)
-                # R2 = R[1, :, :, :]
-                sample_single_img(now + 1, R, name='R', dir=run_dir)
-                # L2_3 = torch.cat([L2, L2, L2], 0)
-                # img2 = R2 * L2_3
-                # sample_single_img(now + 1, img2, name='rec', dir=run_dir)
+            if now % opt.per_samples == 0:
+                ## enhance sample
+                sample_single_img(now, sample_input[0, :, :, :], name='pre', dir=run_dir)
+                sample_single_img(now + 1, sample_input[1, :, :, :], name='pre', dir=run_dir)
+                for j in range(opt.stage):
+                    R, L, U, nR, nL = model(sample_input)
+                    nL_3 = torch.cat([nL, nL, nL], 1)
+                    sample_input = R * nL_3
+                    sample_input = torch.clamp(sample_input, 0, 1)
+                    if (j + 1) % 10 == 0 or j == 0:
+                        sample_gray_img(now, L[0, :, :, :], name='L_' + str(j), dir=run_dir)
+                        sample_gray_img(now, nL[0, :, :, :], name='nL_' + str(j), dir=run_dir)
+                        sample_single_img(now, R[0, :, :, :], name='R_' + str(j), dir=run_dir)
+                        sample_single_img(now, nR[0, :, :, :], name='nR_' + str(j), dir=run_dir)
+                        sample_single_img(now, nR[0, :, :, :], name='nimg_' + str(j), dir=run_dir)
+                        sample_gray_img(now + 1, L[1, :, :, :], name='L_' + str(j), dir=run_dir)
+                        sample_gray_img(now + 1, nL[1, :, :, :], name='nL_' + str(j), dir=run_dir)
+                        sample_single_img(now + 1, R[1, :, :, :], name='R_' + str(j), dir=run_dir)
+                        sample_single_img(now + 1, nR[1, :, :, :], name='nR_' + str(j), dir=run_dir)
+                        sample_single_img(now + 1, nR[1, :, :, :], name='nimg_' + str(j), dir=run_dir)
+                # L = model(input)
+                # # save 2 groups
+                # L1 = L[0, :, :, :]
+                # sample_gray_img(now, L1, name='L', dir=run_dir)
+                # sample_single_img(now, input[0, :, :, :], name='input', dir=run_dir)
+                # R = input[0, :, :, :] / (L[0, :, :, :] + opt.Epsilon)
+                # R = torch.clamp(R, 0, 1)
+                # # R1 = R[0, :, :, :]
+                # sample_single_img(now, R, name='R', dir=run_dir)
+                # # L1_3 = torch.cat([L1, L1, L1], 0)
+                # # img1 = R1 * L1_3
+                # # sample_single_img(now, img1, name='rec', dir=run_dir)
+                #
+                # L2 = L[1, :, :, :]
+                # sample_gray_img(now + 1, L2, name='L', dir=run_dir)
+                # sample_single_img(now + 1, input[1, :, :, :], name='input', dir=run_dir)
+                # R = input[1, :, :, :] / (L[1, :, :, :] + opt.Epsilon)
+                # R = torch.clamp(R, 0, 1)
+                # # R2 = R[1, :, :, :]
+                # sample_single_img(now + 1, R, name='R', dir=run_dir)
+                # # L2_3 = torch.cat([L2, L2, L2], 0)
+                # # img2 = R2 * L2_3
+                # # sample_single_img(now + 1, img2, name='rec', dir=run_dir)
 
         lr_scheduler.step()
         if (epoch >= (opt.save_epochs - 1) and (epoch + 1) % opt.per_epochs == 0):
