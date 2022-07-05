@@ -1,6 +1,7 @@
 from dataset.dataset import *
 from model.SCImodel import *
 from model.judgemodel import *
+from model.LIMEmodel import *
 from util.loss import *
 import pytorch_ssim
 
@@ -58,6 +59,12 @@ def SCITest():
 
 
 if __name__ == '__main__':
+
+    model = LIME_decom(numlayers=3)
+
+    checkpoint = torch.load('./save/100_LIME_decom.pth')
+    model.load_state_dict(checkpoint['LIME'])
+
     #
     # figure = plt.figure('1')
     # ax = Axes3D(figure)  # 设置图像为三维格式
@@ -85,31 +92,31 @@ if __name__ == '__main__':
     # print(Z)
 
     # torch.cuda.empty_cache()
-    opt = getparser()
-
-    transforms_ = [
-        transforms.Resize(opt.img_size, Image.BICUBIC),
-        transforms.ToTensor(),
-    ]
-    cuda = torch.cuda.is_available()
-    Tensor = torch.cuda.FloatTensor if cuda else torch.Tensor
-    TestDataset = ImageDataset(root=opt.data_path, transform_=transforms_)
-    test_imgs = torch.utils.data.DataLoader(
-        TestDataset,
-        batch_size=1,
-        pin_memory=True,
-        num_workers=0)
-
-    print(len(test_imgs))
-    k = 0
-    for i, input in enumerate(test_imgs):
-        input = input = Variable(input['img'].type(Tensor))
-        gray = tensor_gray(input)
-        # print(gray.shape)
-        # gray.unsuqeeze(1)
-        k = k + torch.mean(gray)
-    k = k / 485
-    print(k)
+    # opt = getparser()
+    #
+    # transforms_ = [
+    #     transforms.Resize(opt.img_size, Image.BICUBIC),
+    #     transforms.ToTensor(),
+    # ]
+    # cuda = torch.cuda.is_available()
+    # Tensor = torch.cuda.FloatTensor if cuda else torch.Tensor
+    # TestDataset = ImageDataset(root=opt.data_path, transform_=transforms_)
+    # test_imgs = torch.utils.data.DataLoader(
+    #     TestDataset,
+    #     batch_size=1,
+    #     pin_memory=True,
+    #     num_workers=0)
+    #
+    # print(len(test_imgs))
+    # k = 0
+    # for i, input in enumerate(test_imgs):
+    #     input = input = Variable(input['img'].type(Tensor))
+    #     gray = tensor_gray(input)
+    #     # print(gray.shape)
+    #     # gray.unsuqeeze(1)
+    #     k = k + torch.mean(gray)
+    # k = k / 485
+    # print(k)
 
     #
     # model = Testnet()

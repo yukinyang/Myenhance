@@ -19,9 +19,9 @@ from torch.utils.data import DataLoader
 
 def getparser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--epochs", type=int, default=50)
-    parser.add_argument("--save_epochs", type=int, default=40)
-    parser.add_argument("--per_epochs", type=int, default=50)
+    parser.add_argument("--epochs", type=int, default=60)
+    parser.add_argument("--save_epochs", type=int, default=10)
+    parser.add_argument("--per_epochs", type=int, default=20)
     parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--n_cpus", type=int, default=1)
     parser.add_argument("--lr", type=float, default=0.001)
@@ -43,8 +43,8 @@ def LIMEtrain():
     model = torch.nn.DataParallel(model)
     LOSS = LIMEloss()
 
-    checkpoint = torch.load('./save/100_LIME_decom.pth')
-    model.LIME.load_state_dict(checkpoint['LIME'])
+    # checkpoint = torch.load('./save/100_LIME_decom.pth')
+    # model.LIME.load_state_dict(checkpoint['LIME'])
 
     cuda = torch.cuda.is_available()
     Tensor = torch.cuda.FloatTensor if cuda else torch.Tensor
@@ -153,7 +153,11 @@ def LIMEtrain():
 
         lr_scheduler.step()
         if (epoch >= (opt.save_epochs - 1) and (epoch + 1) % opt.per_epochs == 0):
-            model_path = './save/' + str(epoch + 1) + '_LIME_decom.pth'
+            model_path = './save/' + str(epoch + 1) + '_LIME_decom_all.pth'
+            torch.save({'LIME': model.LIME.state_dict()}, model_path)
+            model_path = './save/' + str(epoch + 1) + '_Denoise_all.pth'
+            torch.save({'LIME': model.Denoise.state_dict()}, model_path)
+            model_path = './save/' + str(epoch + 1) + '_Enhance_all.pth'
             torch.save({'LIME': model.state_dict()}, model_path)
         print("epoch: " + str(epoch) + "   Loss: " + str(nowloss.cpu().detach().numpy()))
         print("======== epoch " + str(epoch) + " has been finished ========")
