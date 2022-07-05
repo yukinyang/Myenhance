@@ -33,6 +33,8 @@ class LIME_decom(nn.Module):
         x = self.inconv(x)
         x = self.convs(x)
         x = self.outconv(x)
+        # R = x[:, 0:3, :, :]
+        # L = x[:, 3:4, :, :]
         return x
 
 

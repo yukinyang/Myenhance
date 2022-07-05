@@ -47,7 +47,7 @@ def MAXC(input):
     G = input[:, 1, :, :]
     B = input[:, 2, :, :]
     out = torch.max(R, torch.max(G, B))
-    out.unsqueeze(1)
+    out = out.unsqueeze(1)
     return out
 
 

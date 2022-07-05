@@ -19,15 +19,15 @@ from torch.utils.data import DataLoader
 
 def getparser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--epochs", type=int, default=200)
-    parser.add_argument("--save_epochs", type=int, default=100)
+    parser.add_argument("--epochs", type=int, default=50)
+    parser.add_argument("--save_epochs", type=int, default=40)
     parser.add_argument("--per_epochs", type=int, default=50)
     parser.add_argument("--batch_size", type=int, default=8)
     parser.add_argument("--n_cpus", type=int, default=1)
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--data_path", type=str, default='../LOLdataset/imgs/')
     parser.add_argument("--img_size", type=int, default=[400, 600])
-    parser.add_argument("--stage", type=int, default=5)
+    parser.add_argument("--stage", type=int, default=2)
     parser.add_argument("--Epsilon", type=int, default=0.000001)
     parser.add_argument("--decay_epoch", type=int, default=200)
 
@@ -39,6 +39,7 @@ def LIMEtrain():
     opt = getparser()
 
     model = LIME_decom(numlayers=3)
+    model = torch.nn.DataParallel(model)
     LOSS = LIMEloss()
 
     cuda = torch.cuda.is_available()
@@ -89,13 +90,16 @@ def LIMEtrain():
             optimizer.zero_grad()
 
             L_list = []
+            R_list = []
             L_list.append(MAXC(input))
             for i in range(opt.stage):
                 L = model(input)
+                # print(R.shape, L.shape)
                 L_list.append(L)
+                # R_list.append(R)
 
             # Calculate loss
-            Loss = LOSS(L_list)
+            Loss = LOSS(L_list, R_list, input)
             nowloss = nowloss + Loss
 
             Loss.backward()
@@ -103,14 +107,29 @@ def LIMEtrain():
             now += 1
 
             if now % 101 == 0:
+                L = model(input)
                 # save 2 groups
-                sample_gray_img(i, L[0, :, :, :], name='L', dir=run_dir)
-                sample_single_img(i, input[0, :, :, :], name='input', dir=run_dir)
-                sample_single_img(i, input[0, :, :, :] / (L[0, :, :, :] + opt.Epsilon), name='R', dir=run_dir)
+                L1 = L[0, :, :, :]
+                sample_gray_img(now, L1, name='L', dir=run_dir)
+                sample_single_img(now, input[0, :, :, :], name='input', dir=run_dir)
+                R = input[0, :, :, :] / (L[0, :, :, :] + opt.Epsilon)
+                R = torch.clamp(R, 0, 1)
+                # R1 = R[0, :, :, :]
+                sample_single_img(now, R, name='R', dir=run_dir)
+                # L1_3 = torch.cat([L1, L1, L1], 0)
+                # img1 = R1 * L1_3
+                # sample_single_img(now, img1, name='rec', dir=run_dir)
 
-                sample_gray_img(i + 1, L[1, :, :, :], name='L', dir=run_dir)
-                sample_single_img(i + 1, input[1, :, :, :], name='input', dir=run_dir)
-                sample_single_img(i + 1, input[1, :, :, :] / (L[1, :, :, :] + opt.Epsilon), name='R', dir=run_dir)
+                L2 = L[1, :, :, :]
+                sample_gray_img(now + 1, L2, name='L', dir=run_dir)
+                sample_single_img(now + 1, input[1, :, :, :], name='input', dir=run_dir)
+                R = input[1, :, :, :] / (L[1, :, :, :] + opt.Epsilon)
+                R = torch.clamp(R, 0, 1)
+                # R2 = R[1, :, :, :]
+                sample_single_img(now + 1, R, name='R', dir=run_dir)
+                # L2_3 = torch.cat([L2, L2, L2], 0)
+                # img2 = R2 * L2_3
+                # sample_single_img(now + 1, img2, name='rec', dir=run_dir)
 
         lr_scheduler.step()
         if (epoch >= (opt.save_epochs - 1) and (epoch + 1) % opt.per_epochs == 0):
