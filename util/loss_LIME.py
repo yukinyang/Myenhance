@@ -83,7 +83,7 @@ class LIMEloss(nn.Module):
             Loss_RG = Loss_RG + smooth_R(nR_list[i])
             Loss_gragent = Loss_gragent + Loss_gradient_LIME(nL_list[i], k=0.5) + Loss_gradient_LIME(L_list[i], k=0.5)
         return Loss_gragent + Loss_LMSE\
-               + Loss_img + (0.1 * Loss_RG + Loss_R) + 0.2 * Loss_U
+               + Loss_img + (0.5 * Loss_RG + Loss_R) + 0.5 * Loss_U
 
 
 
