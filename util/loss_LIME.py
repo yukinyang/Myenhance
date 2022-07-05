@@ -51,34 +51,39 @@ class LIMEloss(nn.Module):
         R2 = R[:, 1:2, :, :]
         R3 = R[:, 2:3, :, :]
         loss = Loss_gradient_LIME(R1, k=0.5) + Loss_gradient_LIME(R1, k=0.5) + Loss_gradient_LIME(R1, k=0.5)
-        # R = tensor_gray(R)
-        # R = R.unsqueeze(1)
-        # loss = Loss_gradient_LIME(R, k=0.5)
         return loss
-    
-    def imgloss(self, R, L, img):
-        L = torch.cat([L, L, L], 1)
-        return self.L2loss(L * R, img)
 
-    def forward(self, L_list, R_list, img=None):
-        # L_list[0] is MAXc of IMG
+    def illu_loss(self, x, img):
+        img = tensor_gray(img)
+        img = img.unsqueeze(1)
+        loss = (torch.exp(1.5 * x) - 2) * (torch.exp(1.5 * img) - 2) + 1
+        loss = torch.clamp(loss, 0, 5)
+        return torch.mean(loss)
+
+    def forward(self, L_list, R_list, img_list, U_list, nR_list, nL_list, imgC_list, img=None):
+        ## L_list[0] is MAXc of IMG
+        ## img_list[0] is initial input
         Loss_gragent = 0
         Loss_LMSE = 0
         Loss_mean = 0
         Loss_gradient_R = 0
         Loss_img = 0
-        Loss_Rimg = 0
-        n = len(L_list)
+        Loss_R = 0
+        Loss_U = 0
+        Loss_RG = 0
+        n = len(img_list)
         for i in range(1, n):
-            Loss_LMSE = Loss_LMSE + self.L2loss(L_list[i], L_list[i - 1])
-            Loss_gragent = Loss_gragent + Loss_gradient_LIME(L_list[i], k=0.5)
-            Loss_mean = Loss_mean + self.mean_loss(L_list[i], img)
-            # Loss_img = Loss_img + self.imgloss(R_list[i - 1], L_list[i], img)
-        # for i in range(0, n - 1):
-        #     Loss_gradient_R = Loss_gradient_R + self.gloss_R(R_list[i])
-        #     Loss_Rimg = Loss_Rimg + self.L2loss(R_list[i], img)
-        # return Loss_gragent + Loss_LMSE + 2 * Loss_img + 0.2 * Loss_gradient_R
-        return Loss_gragent + Loss_LMSE + 0.2 * Loss_mean
+            Loss_img = Loss_img + self.L2loss(img_list[i], img_list[i - 1])
+            # Loss_mean = Loss_mean + self.mean_loss(L_list[i], img)
+        for i in range(0, n - 1):
+            # Loss_gradient_R = Loss_gradient_R + self.gloss_R(R_list[i])
+            Loss_LMSE = Loss_LMSE + self.L2loss(L_list[i], imgC_list[i])
+            Loss_R = Loss_R + self.L2loss(R_list[i], nR_list[i])
+            Loss_U = Loss_U + self.illu_loss(U_list[i], img_list[i])
+            Loss_RG = Loss_RG + smooth_R(nR_list[i])
+            Loss_gragent = Loss_gragent + Loss_gradient_LIME(nL_list[i], k=0.5) + Loss_gradient_LIME(L_list[i], k=0.5)
+        return Loss_gragent + Loss_LMSE\
+               + Loss_img + (0.1 * Loss_RG + Loss_R) + 0.2 * Loss_U
 
 
 
