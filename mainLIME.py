@@ -23,12 +23,12 @@ def getparser():
     parser.add_argument("--save_epochs", type=int, default=10)
     parser.add_argument("--per_epochs", type=int, default=20)
     parser.add_argument("--per_samples", type=int, default=501)
-    parser.add_argument("--batch_size", type=int, default=4)
+    parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--n_cpus", type=int, default=1)
     parser.add_argument("--lr", type=float, default=0.001)
-    parser.add_argument("--data_path", type=str, default='..\LOLdataset\imgs')
-    parser.add_argument("--img_size", type=int, default=[400, 600])
-    parser.add_argument("--stage", type=int, default=10)
+    parser.add_argument("--data_path", type=str, default='G:\datasets\LOLdataset\imgs')
+    parser.add_argument("--img_size", type=int, default=[300, 400])
+    parser.add_argument("--stage", type=int, default=8)
     parser.add_argument("--Epsilon", type=int, default=0.001)
     parser.add_argument("--decay_epoch", type=int, default=200)
 
@@ -40,7 +40,7 @@ def LIMEtrain():
     opt = getparser()
 
     # model = LIME_decom(numlayers=3)
-    model = Mynetwork(numlayers=3)
+    model = Mynetwork()
     # model = torch.nn.DataParallel(model)
     LOSS = LIMEloss()
 
@@ -138,7 +138,7 @@ def LIMEtrain():
                     nL_3 = torch.cat([nL, nL, nL], 1)
                     sample_input = R * nL_3
                     sample_input = torch.clamp(sample_input, 0, 1)
-                    if (j) % 3 == 0 or j == 0:
+                    if (j) % 4 == 0 or j == 0:
                         sample_gray_img(now, L[0, :, :, :], name='L_' + str(j), dir=run_dir)
                         sample_gray_img(now, nL[0, :, :, :], name='nL_' + str(j), dir=run_dir)
                         sample_single_img(now, R[0, :, :, :], name='R_' + str(j), dir=run_dir)

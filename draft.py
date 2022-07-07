@@ -60,26 +60,25 @@ def SCITest():
 
 if __name__ == '__main__':
 
-    model = LIME_decom(numlayers=3)
-
-    checkpoint = torch.load('./save/100_LIME_decom.pth')
-    model.load_state_dict(checkpoint['LIME'])
+    # model = LIME_decom(numlayers=3)
+    #
+    # checkpoint = torch.load('./save/100_LIME_decom.pth')
+    # model.load_state_dict(checkpoint['LIME'])
 
     #
     # figure = plt.figure('1')
     # ax = Axes3D(figure)  # 设置图像为三维格式
-    # X = np.arange(0, 1, 0.01)
+    # X = np.arange(0, 2, 0.01)
     # Y = np.arange(0, 1, 0.01)  # X,Y的范围
     # X, Y = np.meshgrid(X, Y)  # 绘制网格
     # # Z = ((np.exp(1.5 * X) - 2) * (np.exp(1.5 * Y) - 2))
     # k = 0.5
-    # Z = (1 / (1 - np.power((Y), 10))) * ((k - Y) / 2 * np.power(X, 2) + 0.01 / (1 - X)) + 2
+    # Z = 1 - 1 / (np.power(X * 0.5 - Y, 2) + 1)
     # ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap='rainbow')
     #
     # figure = plt.figure('2')
-    # X = np.arange(0, 1, 0.01)
-    # Y = (1 / (1 - X))
-    # Y = (1 / (1 - np.power((0), 10))) * (k - 0) / 2 * np.power(X, 2)
+    # X = np.arange(-5, 5, 0.01)
+    # Y = 1 - 1 / (np.power(X * 0.5 - 1, 2) + 1)
     # plt.plot(X, Y)
     #
     # # 绘制3D图，后面的参数为调节图像的格式
@@ -109,14 +108,21 @@ if __name__ == '__main__':
     #
     # print(len(test_imgs))
     # k = 0
+    # kmin = 10
+    # kmax = 0
+    # avg = nn.AvgPool2d(kernel_size=10)
     # for i, input in enumerate(test_imgs):
-    #     input = input = Variable(input['img'].type(Tensor))
-    #     gray = tensor_gray(input)
-    #     # print(gray.shape)
-    #     # gray.unsuqeeze(1)
-    #     k = k + torch.mean(gray)
+    #     input = Variable(input['img'].type(Tensor))
+    #     img_avg = avg(input)
+    #     img_avg = torch.mean(img_avg, dim=1)
+    #     # gray = tensor_gray(input)
+    #     k = k + torch.mean(img_avg)
+    #     kmin = min(kmin, torch.min(img_avg))
+    #     kmax = max(kmax, torch.max(img_avg))
     # k = k / 485
     # print(k)
+    # print(kmin)
+    # print(kmax)
 
     #
     # model = Testnet()
@@ -150,10 +156,12 @@ if __name__ == '__main__':
     #         np.savetxt('np_L.txt', L, fmt='%f')
 
 
-    # img = torch.randn([1, 10, 10])
-    # avg = torch.nn.AvgPool2d(kernel_size=7, stride=1, padding=3)
-    # img = avg(img)
-    # print(img.shape)
+    img = torch.randn([8, 3, 10, 10], dtype=torch.float)
+    print(img.dtype)
+    zero = torch.zeros_like(img)
+    ones = 2 * torch.ones_like(img)
+    ones_mode1 = torch.where(img > 0.3, img, ones)
+    print(ones)
 
 
 
