@@ -20,14 +20,14 @@ from torch.utils.data import DataLoader
 def getparser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--epochs", type=int, default=100)
-    parser.add_argument("--save_epochs", type=int, default=700)
-    parser.add_argument("--per_epochs", type=int, default=200)
+    parser.add_argument("--save_epochs", type=int, default=80)
+    parser.add_argument("--per_epochs", type=int, default=50)
     parser.add_argument("--per_samples", type=int, default=101)
-    parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--n_cpus", type=int, default=1)
     parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument("--C", type=float, default=0.05)
-    parser.add_argument("--data_path", type=str, default='G:\datasets\LOLdataset\imgs')
+    parser.add_argument("--data_path", type=str, default='../LOLdataset/imgs/')
     parser.add_argument("--img_size", type=int, default=[400, 600])
     parser.add_argument("--stage", type=int, default=1)
     parser.add_argument("--Epsilon", type=int, default=0.001)
@@ -79,7 +79,7 @@ def LIMEtrain():
     now = 0
     numbatches = len(dataloader)
 
-    run_dir = get_dir_name('./run', 'MY_train')
+    run_dir = get_dir_name('./run', 'RES_L_train')
     os.makedirs(run_dir)
 
     for epoch in range(0, opt.epochs):
@@ -98,14 +98,16 @@ def LIMEtrain():
             # L_list = []
             R_list = []
             R, L = model(input)
-            for i in range(opt.stage):
-                input_list.append(input)
-                R = input / L
-                R = torch.clamp(R, 0, 1)
-                R_list.append(R)
+            R_list.append(R)
+            input_list.append(input)
+            # for i in range(opt.stage):
+            #     input_list.append(input)
+            #     R = input / L
+            #     R = torch.clamp(R, 0, 1)
+            #     R_list.append(R)
                 # L_list.append(L)
-                input = input + opt.C
-                input = torch.clamp(input, 0, 1)
+                # input = input + opt.C
+                # input = torch.clamp(input, 0, 1)
 
             # Calculate loss
             Loss = LOSS(L, input_list, R_list)
@@ -128,7 +130,7 @@ def LIMEtrain():
         lr_scheduler.step()
         if (epoch >= (opt.save_epochs - 1) and (epoch + 1) % opt.per_epochs == 0):
             model_path = './save/' + str(epoch + 1) + '_RES_decom.pth'
-            torch.save({'RES': model.LIME.state_dict()}, model_path)
+            torch.save({'RES': model.state_dict()}, model_path)
         nowloss = nowloss / numbatches
         print("epoch: " + str(epoch) + "   Loss: " + str(nowloss.cpu().detach().numpy()))
         print("======== epoch " + str(epoch) + " has been finished ========")

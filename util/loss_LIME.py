@@ -38,23 +38,35 @@ def Light(L, img):
     return loss
 
 
-def Light_blocks(L, img):
+def Light_blocks(L, img, R):
     loss = 0
     batch = img.shape[0]
     avg = nn.AvgPool2d(kernel_size=10)
     for i in range(batch):
         img_now = img[i:i + 1, :, :, :]
         L_now = L[i:i + 1, :, :, :]
+        R_now = R[i:i + 1, :, :, :]
         img_avg = avg(img_now)
         L_avg = avg(L_now)
-        ranges = 2 * torch.ones_like(L_avg)
-        zeros = torch.zeros_like(L_avg)
-        L_mode1 = torch.where(img_avg > 0.3, L_avg, ranges)
-        L_mode2 = torch.where(img_avg < 0.3, L_avg, zeros)
-        L_mode2 = torch.where(img_avg < 0.004, zeros, L_mode2)
-        L_Loss = torch.float_power((2 - L_mode1), 2) + L_mode2
+
+        # R_avg = img_avg / L_avg
+        R_avg = avg(R_now)
+        # R_avg = torch.clamp(R_avg, 0.0001, 1)
+        zeros = torch.zeros_like(R_avg) + 0.5
+        R_Loss = torch.where(R_avg < 0.5, zeros, R_avg)
+        # R_Loss = torch.where(R_avg < 0.2, R_avg, R_Loss)
+        # R_Loss = torch.where(img_avg < 0.01, zeros, R_Loss)
+        L_Loss = (torch.abs(R_Loss - 0.5) + 0.01) * 0.8
+
+        # ranges = 3 * torch.ones_like(L_avg)
+        # zeros = torch.zeros_like(L_avg)
+        # L_mode1 = torch.where(img_avg > 0.3, L_avg, ranges)
+        # L_mode2 = torch.where(img_avg < 0.3, L_avg, zeros)
+        # L_mode2 = torch.where(img_avg < 0.004, zeros, L_mode2)
+        # L_Loss = torch.float_power((2 - L_mode1), 2) + L_mode2
+
         loss = loss + torch.mean(L_Loss)
-    loss = loss / batch
+    # loss = loss / batch
     # print('Light loss:  ', loss)
     return loss
 
@@ -157,16 +169,25 @@ class RES_loss(nn.Module):
         self.L2loss = nn.MSELoss()
         self.Lsmooth = SmoothLoss()
 
+    def gloss_R(self, R):
+        R1 = R[:, 0:1, :, :]
+        R2 = R[:, 1:2, :, :]
+        R3 = R[:, 2:3, :, :]
+        loss = Loss_gradient_LIME(R1, k=0.5) + Loss_gradient_LIME(R2, k=0.5) + Loss_gradient_LIME(R3, k=0.5)
+        return loss
+
     def forward(self, L, input_list, R_list):
         # Loss_LG = self.gloss(L)
-        Loss_LG = self.Lsmooth(input_list[0], L)
+        # Loss_LG = self.Lsmooth(input_list[0], L)
+        Loss_LG = self.gloss_R(L)
+        Loss_RG = smooth_R(R_list[0])
         Loss_LI = self.L2loss(L, 2 * input_list[0])
-        Loss_Light = Light_blocks(L, input_list[0])
+        Loss_Light = Light_blocks(L, input_list[0], R_list[0])
         Loss_R = 0
         for i in range(len(input_list)):
             Loss_R = Loss_R + self.L1loss(input_list[i], R_list[i])
         # Loss = Loss_LG + Loss_LI
-        Loss = 1 * Loss_LG + 1 * Loss_LI + 1 * Loss_Light
+        Loss = 1 * Loss_LG + 0.5 * Loss_LI + 1 * Loss_Light + 1 * self.L2loss(input_list[0], R_list[0])
         # print('all loss:  ', Loss)
         return Loss
 

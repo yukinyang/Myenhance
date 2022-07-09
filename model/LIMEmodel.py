@@ -9,19 +9,19 @@ import torch.nn as nn
 class RES_decom(nn.Module):
     def __init__(self):
         super(RES_decom, self).__init__()
-        self.range = 1
+        self.range = 3
         self.relu = nn.ReLU(inplace=True)
         self.sigmoid = nn.Sigmoid()
         self.inconv = nn.Sequential(
-            nn.Conv2d(3, 3, kernel_size=3, stride=1, padding=1, padding_mode='reflect'),
+            nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1, padding_mode='reflect'),
             nn.ReLU(inplace=True),
         )
         self.convs = nn.Sequential(
-            nn.Conv2d(3, 3, kernel_size=3, stride=1, padding=1, padding_mode='reflect'),
+            nn.Conv2d(16, 16, kernel_size=3, stride=1, padding=1, padding_mode='reflect'),
             nn.ReLU(inplace=True),
         )
         self.outconv = nn.Sequential(
-            nn.Conv2d(3, 3, kernel_size=1, stride=1),
+            nn.Conv2d(16, 1, kernel_size=1, stride=1),
         )
 
     def forward(self, input):
@@ -33,6 +33,7 @@ class RES_decom(nn.Module):
         x = self.sigmoid(x)
         x = torch.clamp(x, 0.0001, self.range)
         L = x * self.range
+        L = torch.cat([L, L, L], 1)
         R = input / L
         R = torch.clamp(R, 0, 1)
         return R, L
