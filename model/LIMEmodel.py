@@ -65,13 +65,13 @@ class GetU_net(nn.Module):
         return x
 
 
-class Denoise_net(nn.Module):
+class D_net(nn.Module):
     def __init__(self):
-        super(Denoise_net, self).__init__()
+        super(D_net, self).__init__()
         self.convs = self.make_convs()
         self.outconv = nn.Sequential(
             nn.Conv2d(8, 3, kernel_size=1),
-            nn.Sigmoid(),
+            nn.Sigmoid()
         )
 
     def make_convs(self):
@@ -79,18 +79,16 @@ class Denoise_net(nn.Module):
         layers.append(nn.Sequential(
             nn.Conv2d(3, 8, kernel_size=3, stride=1, padding=1, padding_mode='reflect'),
             nn.ReLU(inplace=True),
-            nn.Conv2d(8, 16, kernel_size=3, stride=2, padding=1, padding_mode='reflect'),
-            nn.ReLU(inplace=True),
-            nn.ConvTranspose2d(16, 8, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.Conv2d(8, 8, kernel_size=3, stride=1, padding=1, padding_mode='reflect'),
             nn.ReLU(inplace=True),
         ))
         return nn.Sequential(*layers)
 
     def forward(self, input):
         x = input
-        x = self.convs(x)
-        x = self.outconv(x)
-        return x
+        y = self.convs(x)
+        z = self.outconv(y)
+        return z
 
 
 class LIME_decom(nn.Module):

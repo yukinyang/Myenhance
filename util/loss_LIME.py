@@ -21,6 +21,14 @@ def Loss_gradient_LIME(input, k=1):
     return k * (torch.mean(Gx) + torch.mean(Gy))
 
 
+def gloss_R(R):
+    R1 = R[:, 0:1, :, :]
+    R2 = R[:, 1:2, :, :]
+    R3 = R[:, 2:3, :, :]
+    loss = Loss_gradient_LIME(R1, k=0.5) + Loss_gradient_LIME(R2, k=0.5) + Loss_gradient_LIME(R3, k=0.5)
+    return loss
+
+
 def Light(L, img):
     loss = 0
     batch = img.shape[0]
@@ -38,6 +46,11 @@ def Light(L, img):
     return loss
 
 
+def tensor_gray_YUV(input):
+    # return input[:, 0:1, :, :] * 0.299 + input[:, 1:2, :, :] * 0.587 + input[:, 2:3, :, :] * 0.114
+    return input[:, 0:1, :, :] * 0.333 + input[:, 1:2, :, :] * 0.333 + input[:, 2:3, :, :] * 0.333
+
+
 def Light_blocks(L, img, R):
     loss = 0
     batch = img.shape[0]
@@ -46,17 +59,25 @@ def Light_blocks(L, img, R):
         img_now = img[i:i + 1, :, :, :]
         L_now = L[i:i + 1, :, :, :]
         R_now = R[i:i + 1, :, :, :]
+        img_now = tensor_gray_YUV(img_now)
+        L_now = tensor_gray_YUV(L_now)
+        R_now = tensor_gray_YUV(R_now)
         img_avg = avg(img_now)
         L_avg = avg(L_now)
 
         # R_avg = img_avg / L_avg
         R_avg = avg(R_now)
+        I_2 = img_avg * img_avg
         # R_avg = torch.clamp(R_avg, 0.0001, 1)
-        zeros = torch.zeros_like(R_avg) + 0.5
+        zeros = torch.zeros_like(R_avg) + 1.0
+        # print('zeros.shape', zeros.shape)
+        LI_loss = torch.where(img_avg < 0.5, zeros, L_avg)
+        LI_loss = torch.where(L_avg < 1, zeros, L_avg)
         R_Loss = torch.where(R_avg < 0.5, zeros, R_avg)
         # R_Loss = torch.where(R_avg < 0.2, R_avg, R_Loss)
         # R_Loss = torch.where(img_avg < 0.01, zeros, R_Loss)
-        L_Loss = (torch.abs(R_Loss - 0.5) + 0.01) * 0.8
+        # L_Loss = (torch.abs(R_Loss - 0.5) + 0.01) * 0.8
+        L_Loss = torch.float_power(LI_loss - 1, 1) * 0.8
 
         # ranges = 3 * torch.ones_like(L_avg)
         # zeros = torch.zeros_like(L_avg)
@@ -190,6 +211,19 @@ class RES_loss(nn.Module):
         Loss = 1 * Loss_LG + 0.5 * Loss_LI + 1 * Loss_Light + 1 * self.L2loss(input_list[0], R_list[0])
         # print('all loss:  ', Loss)
         return Loss
+
+
+class Denoise_loss(nn.Module):
+    def __init__(self):
+        super(Denoise_loss, self).__init__()
+        self.L1loss = nn.L1Loss()
+        self.L2loss = nn.MSELoss()
+
+    def forward(self, R0, R1):
+        Loss_R = self.L2loss(R0, R1)
+        Loss_smooth = smooth_R(R1)
+        return Loss_R
+        # return Loss_R + 0.5 * Loss_smooth
 
 
 class SmoothLoss(nn.Module):
