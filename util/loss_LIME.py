@@ -51,45 +51,105 @@ def tensor_gray_YUV(input):
     return input[:, 0:1, :, :] * 0.333 + input[:, 1:2, :, :] * 0.333 + input[:, 2:3, :, :] * 0.333
 
 
-def Light_blocks(L, img, R):
+# def Light_blocks(L, img, R):
+#     loss = 0
+#     batch = img.shape[0]
+#     avg = nn.AvgPool2d(kernel_size=10)
+#     for i in range(batch):
+#         img_now = img[i:i+1, :, :, :]
+#         L_now = L[i:i+1, :, :, :]
+#         R_now = R[i:i+1, :, :, :]
+#         img_now = tensor_gray_YUV(img_now)
+#         L_now = tensor_gray_YUV(L_now)
+#         R_now = tensor_gray_YUV(R_now)
+#         img_avg = avg(img_now)
+#         L_avg = avg(L_now)
+
+#         # R_avg = img_avg / L_avg
+#         R_avg = avg(R_now)
+#         I_2 = img_avg * img_avg
+#         # R_avg = torch.clamp(R_avg, 0.0001, 1)
+#         zeros = torch.zeros_like(R_avg) + 1.0
+#         # print('zeros.shape', zeros.shape)
+#         LI_loss = torch.where(img_avg < 0.5, zeros, L_avg)
+#         LI_loss = torch.where(L_avg < 1, zeros, L_avg)
+#         R_Loss = torch.where(R_avg < 0.5, zeros, R_avg)
+#         # R_Loss = torch.where(R_avg < 0.2, R_avg, R_Loss)
+#         # R_Loss = torch.where(img_avg < 0.01, zeros, R_Loss)
+#         # L_Loss = (torch.abs(R_Loss - 0.5) + 0.01) * 0.8
+#         L_Loss = torch.float_power(LI_loss - 1, 1) * 0.8
+
+#         # ranges = 3 * torch.ones_like(L_avg)
+#         # zeros = torch.zeros_like(L_avg)
+#         # L_mode1 = torch.where(img_avg > 0.3, L_avg, ranges)
+#         # L_mode2 = torch.where(img_avg < 0.3, L_avg, zeros)
+#         # L_mode2 = torch.where(img_avg < 0.004, zeros, L_mode2)
+#         # L_Loss = torch.float_power((2 - L_mode1), 2) + L_mode2
+
+#         loss = loss + torch.mean(L_Loss)
+#     # loss = loss / batch
+#     # print('Light loss:  ', loss)
+#     return loss
+
+
+def Light_blocks(L, img, R, RsL0):
+    thr = 0.5
     loss = 0
     batch = img.shape[0]
     avg = nn.AvgPool2d(kernel_size=10)
+    # print(type(RsL0))
+    # print(RsL0.shape)
+    RsL = RsL0
+    # RsL = (RsL0[:, 0:1, :, :] + RsL0[:, 1:2, :, :] + RsL0[:, 2:3, :, :]) / 3
+    # RsL = torch.cat([RsL, RsL, RsL], 1)
     for i in range(batch):
-        img_now = img[i:i + 1, :, :, :]
-        L_now = L[i:i + 1, :, :, :]
-        R_now = R[i:i + 1, :, :, :]
-        img_now = tensor_gray_YUV(img_now)
-        L_now = tensor_gray_YUV(L_now)
-        R_now = tensor_gray_YUV(R_now)
-        img_avg = avg(img_now)
+        img_now = img[i:i+1, :, :, :]
+        L_now = L[i:i+1, :, :, :]
+        R_now = R[i:i+1, :, :, :]
+        RsL_now = RsL[i:i+1, :, :, :]
+        Himg, _, Limg = cal_HSL(img_now)
+        Hr, _, Lr = cal_HSL(R_now)
+        Limg = avg(Limg)
         L_avg = avg(L_now)
+        Lr_avg = avg(Lr)
+        RsL_avg = avg(RsL_now)
 
-        # R_avg = img_avg / L_avg
-        R_avg = avg(R_now)
-        I_2 = img_avg * img_avg
-        # R_avg = torch.clamp(R_avg, 0.0001, 1)
-        zeros = torch.zeros_like(R_avg) + 1.0
-        # print('zeros.shape', zeros.shape)
-        LI_loss = torch.where(img_avg < 0.5, zeros, L_avg)
-        LI_loss = torch.where(L_avg < 1, zeros, L_avg)
-        R_Loss = torch.where(R_avg < 0.5, zeros, R_avg)
-        # R_Loss = torch.where(R_avg < 0.2, R_avg, R_Loss)
-        # R_Loss = torch.where(img_avg < 0.01, zeros, R_Loss)
-        # L_Loss = (torch.abs(R_Loss - 0.5) + 0.01) * 0.8
-        L_Loss = torch.float_power(LI_loss - 1, 1) * 0.8
+        zeros = torch.zeros_like(Limg) + 1.0
+        zeros1 = torch.zeros_like(Limg) + thr
+        # LI_loss = torch.where(Limg < thr, zeros, L_avg)
+        LI_loss = torch.where(Limg < thr, zeros, L_avg)
+        # LI_loss = torch.where(L_avg < 1, zeros, LI_loss)
+        
+        # LR_loss = torch.where(Limg > thr, zeros1, Lr_avg)
+        # LR_loss = torch.where(LR_loss < thr, zeros1, LR_loss)
+        LR_loss = torch.where(L_avg > thr, zeros1, RsL_avg)
+        LR_loss = torch.where(RsL_avg < thr, zeros1, LR_loss)
+        # LR_loss = torch.where(Limg < 0.1, zeros1, LR_loss)
 
-        # ranges = 3 * torch.ones_like(L_avg)
-        # zeros = torch.zeros_like(L_avg)
-        # L_mode1 = torch.where(img_avg > 0.3, L_avg, ranges)
-        # L_mode2 = torch.where(img_avg < 0.3, L_avg, zeros)
-        # L_mode2 = torch.where(img_avg < 0.004, zeros, L_mode2)
-        # L_Loss = torch.float_power((2 - L_mode1), 2) + L_mode2
+        L_Loss = torch.float_power(LI_loss - 1, 2) * 0.8
+        R_Loss = torch.float_power(LR_loss - thr, 2) * 0.8
+        Loss = torch.mean(L_Loss)
 
-        loss = loss + torch.mean(L_Loss)
-    # loss = loss / batch
-    # print('Light loss:  ', loss)
+        loss = loss + Loss
+        # print(loss)
     return loss
+
+
+def H_loss(a, b):
+    Himg, _, _ = cal_HSL(a)
+    Hr, _, _ = cal_HSL(b)
+    L1loss = nn.L1Loss()
+    loss = L1loss(Himg, Hr) * 0.5
+    return loss
+
+
+def LI_smooth(L, I):
+    thr = 0.00001
+    L = tensor_gray_YUV(L)
+    I = tensor_gray_YUV(I)
+    x = gradient(L, 'x') / (gradient(I, 'x') + thr)
+    y = gradient(L, 'y') / (gradient(I, 'y') + thr)
+    return torch.mean(x) + torch.mean(y)
 
 
 class LIMEloss(nn.Module):
@@ -157,8 +217,6 @@ class LIMEloss(nn.Module):
                + Loss_img + (0.5 * Loss_RG + Loss_R) + 0.5 * Loss_U
 
 
-
-
 class LIMEloss_decom(nn.Module):
     def __init__(self):
         super(LIMEloss, self).__init__()
@@ -189,6 +247,7 @@ class RES_loss(nn.Module):
         self.L1loss = nn.L1Loss()
         self.L2loss = nn.MSELoss()
         self.Lsmooth = SmoothLoss()
+        self.Avgpool = nn.AvgPool2d(kernel_size=7)
 
     def gloss_R(self, R):
         R1 = R[:, 0:1, :, :]
@@ -197,19 +256,30 @@ class RES_loss(nn.Module):
         loss = Loss_gradient_LIME(R1, k=0.5) + Loss_gradient_LIME(R2, k=0.5) + Loss_gradient_LIME(R3, k=0.5)
         return loss
 
-    def forward(self, L, input_list, R_list):
+    def forward(self, L, input_list, R_list, RsL):
+        C = MAXC(input_list[0])
+        k = 0.1
+        C1 = C + k * C * C * C * C
+        L1 = L[:, 0:1, :, :]
+        img_gray = tensor_gray_YUV(input_list[0])
+        Loss_s = torch.mean(gradient(L1, 'x') * torch.exp(-10 * gradient(img_gray, 'x'))) + torch.mean(gradient(L1, 'y') * torch.exp(-10 * gradient(img_gray, 'y')))
         # Loss_LG = self.gloss(L)
         # Loss_LG = self.Lsmooth(input_list[0], L)
-        Loss_LG = self.gloss_R(L)
-        Loss_RG = smooth_R(R_list[0])
-        Loss_LI = self.L2loss(L, 2 * input_list[0])
-        Loss_Light = Light_blocks(L, input_list[0], R_list[0])
-        Loss_R = 0
-        for i in range(len(input_list)):
-            Loss_R = Loss_R + self.L1loss(input_list[i], R_list[i])
-        # Loss = Loss_LG + Loss_LI
-        Loss = 1 * Loss_LG + 0.5 * Loss_LI + 1 * Loss_Light + 1 * self.L2loss(input_list[0], R_list[0])
-        # print('all loss:  ', Loss)
+        # Loss_LG = self.gloss_R(L)
+        # L_avg = self.Avgpool(L)
+        # Limg_avg = self.Avgpool(Limg)
+        # L_avg = torch.where(Limg_avg > thr, Limg_avg, L_avg)
+
+        Loss_LI = self.L2loss(L1, C1)
+        # Loss_Light = Light_blocks(L, input_list[0], R_list[0], RsL)
+        # Loss_H = H_loss(input_list[0], R_list[0])
+        # Loss_R = 0
+        # for i in range(len(input_list)):
+        #     Loss_R = Loss_R + self.L1loss(input_list[i], R_list[i])
+        Loss_R = self.L2loss(input_list[0], R_list[0])
+        # Loss = 5 * Loss_LG + 0.0 * Loss_LI + 1 * Loss_Light + 1 * self.L2loss(input_list[0], R_list[0]) + Loss_H
+        # Loss = 0.05 * Loss_LG + 1 * Loss_Light + 1 * Loss_R + Loss_H + 1 * Loss_LI
+        Loss = 1 * Loss_s + 1 * Loss_LI + 0.5 * Loss_R
         return Loss
 
 
@@ -222,8 +292,9 @@ class Denoise_loss(nn.Module):
     def forward(self, R0, R1):
         Loss_R = self.L2loss(R0, R1)
         Loss_smooth = smooth_R(R1)
-        return Loss_R
-        # return Loss_R + 0.5 * Loss_smooth
+        Loss_col = H_loss(R0, R1)
+        # return Loss_R
+        return Loss_R + 0.01 * Loss_smooth + 0.5 * Loss_col
 
 
 class SmoothLoss(nn.Module):

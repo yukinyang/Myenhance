@@ -43,11 +43,11 @@ def RGB2BGR(input):
 
 
 def MAXC(input):
-    R = input[:, 0, :, :]
-    G = input[:, 1, :, :]
-    B = input[:, 2, :, :]
+    R = input[:, 0:1, :, :]
+    G = input[:, 1:2, :, :]
+    B = input[:, 2:3, :, :]
     out = torch.max(R, torch.max(G, B))
-    out = out.unsqueeze(1)
+    # out = out.unsqueeze(1)
     return out
 
 
@@ -117,6 +117,26 @@ def sampleSCI():
     return 0
 
 
+def cal_HSL(input):
+    ## calculate HSL from RGB
+    R = input[:, 0:1, :, :]
+    G = input[:, 1:2, :, :]
+    B = input[:, 2:3, :, :]
+    Max = torch.max(R, torch.max(G, B))
+    Min = torch.min(R, torch.min(G, B))
+    Minus = Max - Min + 0.001
+    L = (Max + Min) / 2
+    zeros = torch.zeros_like(L)
+    S = torch.where(L > 0.5, Minus / (2.001 - 2 * L), Minus / (2 * L + 0.001))
+    S = torch.where(L == 0, zeros, S)
+    # S = torch.where(Max == Min, zeros, S)
+    H = torch.where(Max == R, (G - B) / Minus / 6, zeros)
+    H = torch.where(G < B, 1 + (G - B) / Minus / 6, H)
+    H = torch.where(Max == G, 1 / 3 + (B - R) / Minus / 6, H)
+    H = torch.where(Max == B, 2 / 3 + (R - G) / Minus / 6, H)
+    H = torch.where(Max == Min, zeros, H)
+    H = H - torch.floor(H)
+    return H, S, L
 
 
 
