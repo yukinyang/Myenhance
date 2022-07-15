@@ -151,7 +151,7 @@ class restore(nn.Module):
         self.calP = P()
         self.calQ = Q()
         self.convs = nn.Sequential(
-            nn.Conv2d(12, 16, kernel_size=7, stride=1, padding=3, padding_mode='reflect'),
+            nn.Conv2d(8, 16, kernel_size=7, stride=1, padding=3, padding_mode='reflect'),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Conv2d(16, 8, kernel_size=7, stride=1, padding=3, padding_mode='reflect'),
             nn.LeakyReLU(0.2, inplace=True),
