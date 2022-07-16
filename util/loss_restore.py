@@ -30,6 +30,15 @@ def gloss_R(R):
     return loss
 
 
+def H_loss(a, b):
+    Himg, _, _ = cal_HSL(a)
+    Hr, _, _ = cal_HSL(b)
+    L1loss = nn.L1Loss()
+    L2loss = nn.MSELoss()
+    loss = L2loss(Himg, Hr) * 0.5
+    return loss
+
+
 def tensor_gray_YUV(input):
     # return input[:, 0:1, :, :] * 0.299 + input[:, 1:2, :, :] * 0.587 + input[:, 2:3, :, :] * 0.114
     return input[:, 0:1, :, :] * 0.333 + input[:, 1:2, :, :] * 0.333 + input[:, 2:3, :, :] * 0.333
@@ -46,9 +55,10 @@ class restore_loss(nn.Module):
         loss_l2 = 0
         n = len(R_list)
         for i in range(n - 1):
-            loss_l2 = loss_l2 + self.L2loss(R_list[i], R_list[i + 1]) + self.L2loss(L_list[i], L_list[i + 1])
-        loss_l = torch.mean(gradient_LIME(L_list[n - 1], 'x') + gradient(L_list[n - 1], 'y'))
-        loss_r = (1 - self.ssim(R_list[n - 1], R_list[0])) + self.L2loss(R_list[n - 1], R_list[0])
+            loss_l2 = loss_l2 + self.L2loss(R_list[i], R_list[i + 1]) + self.L2loss(L_list[i], L_list[i + 1]) + H_loss(R_list[i], R_list[i + 1])
+        loss_l = torch.mean(gradient(L_list[n - 1], 'x')) + torch.mean(gradient(L_list[n - 1], 'y'))
+        loss_r = 0.2 * (1 - self.ssim(R_list[n - 1], R_list[0])) + self.L2loss(R_list[n - 1], R_list[0])
+        # loss_r = self.L2loss(R_list[n - 1], R_list[0]) + H_loss(R_list[n - 1], R_list[0])
         LOSS = loss_l2 + 0.2 * loss_l + loss_r
         return LOSS
 

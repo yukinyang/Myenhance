@@ -151,18 +151,20 @@ class restore(nn.Module):
         self.calP = P()
         self.calQ = Q()
         self.convs = nn.Sequential(
-            nn.Conv2d(8, 16, kernel_size=7, stride=1, padding=3, padding_mode='reflect'),
+            nn.Conv2d(5, 16, kernel_size=7, stride=1, padding=3, padding_mode='reflect'),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(16, 8, kernel_size=7, stride=1, padding=3, padding_mode='reflect'),
+            nn.Conv2d(16, 8, kernel_size=3, stride=1, padding=1, padding_mode='reflect'),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(8, 4, kernel_size=7, stride=1, padding=3, padding_mode='reflect'),
+            nn.Conv2d(8, 4, kernel_size=3, stride=1, padding=1, padding_mode='reflect'),
             nn.LeakyReLU(0.2, inplace=True),
         )
 
     def forward(self, I, P, Q, W):
-        P = self.calP(I, Q, P)
-        Q = self.calQ(I, P, Q)
-        input = torch.cat([I, P, Q, W], 1)
+        P1 = self.calP(I, Q, P)
+        Q1 = self.calQ(I, P1, Q)
+        # print(P1.shape)
+        # print(Q1.shape)
+        input = torch.cat([P1, Q1, W], 1)
         out = self.convs(input)
         R = out[:, 0:3, :, :]
         L = out[:, 3:4, :, :]
@@ -177,6 +179,7 @@ class P(nn.Module):
     def __init__(self):
         super().__init__()
     def forward(self, I, Q, R, gamma=0.2):
+        Q = torch.cat([Q, Q, Q], 1)
         return (I * Q + gamma * R) / (gamma + Q * Q)
 
 
@@ -188,16 +191,16 @@ class Q(nn.Module):
     def __init__(self):
         super().__init__()
     def forward(self, I, P, L, lamda=0.2):
-        return (I * P + lamda * L) / ((P * P) + lamda)
-        # IR = I[:, 0:1, :, :]
-        # IG = I[:, 1:2, :, :]
-        # IB = I[:, 2:3, :, :]
-        #
-        # PR = P[:, 0:1, :, :]
-        # PG = P[:, 1:2, :, :]
-        # PB = P[:, 2:3, :, :]
-        #
-        # return (IR * PR + IG * PG + IB * PB + lamda * L) / ((PR * PR + PG * PG + PB * PB) + lamda)
+        # return (I * P + lamda * L) / ((P * P) + lamda)
+        IR = I[:, 0:1, :, :]
+        IG = I[:, 1:2, :, :]
+        IB = I[:, 2:3, :, :]
+        
+        PR = P[:, 0:1, :, :]
+        PG = P[:, 1:2, :, :]
+        PB = P[:, 2:3, :, :]
+        
+        return (IR * PR + IG * PG + IB * PB + lamda * L) / ((PR * PR + PG * PG + PB * PB) + lamda)
 
 
 
