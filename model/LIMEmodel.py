@@ -150,6 +150,8 @@ class restore(nn.Module):
         super(restore, self).__init__()
         self.calP = P()
         self.calQ = Q()
+        self.G = SelfAttention()
+        self.K = K()
         self.convs = nn.Sequential(
             nn.Conv2d(5, 16, kernel_size=7, stride=1, padding=3, padding_mode='reflect'),
             nn.LeakyReLU(0.2, inplace=True),
@@ -168,7 +170,10 @@ class restore(nn.Module):
         out = self.convs(input)
         R = out[:, 0:3, :, :]
         L = out[:, 3:4, :, :]
-        return R, L
+        W = self.G(L)
+        K = self.K(R, L)
+        I = I + W * K
+        return R, L, I
 
 
 class P(nn.Module):
@@ -203,5 +208,44 @@ class Q(nn.Module):
         return (IR * PR + IG * PG + IB * PB + lamda * L) / ((PR * PR + PG * PG + PB * PB) + lamda)
 
 
+class SelfAttention(nn.Module):
+    def __init__(self, h=400, w=600, mid=2400):
+        super(SelfAttention, self).__init__()
+        self.inchannels = h * w
+        self.midchannels = mid
+        self.mlp = nn.Sequential(
+            nn.Linear(self.inchannels, self.midchannels),
+            nn.Sigmoid(),
+            nn.Linear(self.midchannels, self.inchannels),
+            nn.Sigmoid(),
+        )
 
+    def forward(self, L):
+        b, c, w, h = L.shape
+        L0 = L.view(b, c, w * h)
+        L0 = self.mlp(L0)
+        return L0 * L
+
+
+class K(nn.Module):
+    def __init__(self):
+        super(K, self).__init__()
+        self.convs = nn.Sequential(
+            nn.Conv2d(4, 8, kernel_size=7, padding=3, padding_mode='reflect'),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(8, 8, kernel_size=3, padding=1, padding_mode='reflect'),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(8, 4, kernel_size=3, padding=1, padding_mode='reflect'),
+            nn.ReLU(inplace=True),
+        )
+        self.outconv = nn.Sequential(
+            nn.Conv2d(4, 3, kernel_size=3, padding=1, padding_mode='reflect'),
+            nn.Sigmoid()
+        )
+
+    def forward(self, R, L):
+        input = torch.cat([R, L], 1)
+        mid = self.convs(input) + input
+        out = 1 - self.outconv(mid)
+        return out
 

@@ -114,10 +114,10 @@ def LIMEtrain():
             # print(Q.shape)
             # print(W.shape)
             for i in range(opt.stage):
-                R, L = model(input, P, Q, W)
+                R, L, I = model(input, P, Q, W)
                 R_list.append(R)
                 L_list.append(L)
-                P, Q = R, L
+                P, Q, input = R, L, I
 
 
             # Calculate loss
